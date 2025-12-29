@@ -1,68 +1,39 @@
 /**
- * 2026 Ramazan ayı tarihlerini döndürür
- * 2026 Ramazan: 19 Şubat - 19 Mart (30 gün)
+ * 2026 Ramazan ayi tarihleri ve yardimci fonksiyonlar
+ * 
+ * 2026 Ramazan ayi: 27 Subat 2026 - 28 Mart 2026 (30 gun)
+ */
+
+/**
+ * 2026 Ramazan ayinin tum gunlerini Date array olarak dondurur
+ * @returns 30 gunluk Ramazan tarihleri dizisi
  */
 export function getRamazan2026Tarihleri(): Date[] {
-  const tarihler: Date[] = [];
+  const ramazanTarihleri: Date[] = [];
   
-  // 2026 Ramazan: 19 Şubat - 19 Mart
-  const baslangic = new Date(2026, 1, 19); // Şubat = 1 (0-indexed)
-  const bitis = new Date(2026, 2, 19); // Mart = 2 (0-indexed)
+  // 2026 Ramazan ayi baslangici: 27 Subat 2026
+  const baslangicTarihi = new Date(2026, 1, 27);
   
-  const suankiTarih = new Date(baslangic);
-  
-  while (suankiTarih <= bitis) {
-    tarihler.push(new Date(suankiTarih));
-    suankiTarih.setDate(suankiTarih.getDate() + 1);
+  // 30 gunluk Ramazan ayi
+  for (let i = 0; i < 30; i++) {
+    const tarih = new Date(baslangicTarihi);
+    tarih.setDate(baslangicTarihi.getDate() + i);
+    tarih.setHours(0, 0, 0, 0);
+    ramazanTarihleri.push(tarih);
   }
   
-  return tarihler;
+  return ramazanTarihleri;
 }
 
 /**
- * Tarihi YYYY-MM-DD formatında string'e çevirir
+ * Date objesini YYYY-MM-DD formatinda string'e cevirir
+ * @param tarih - Cevrilecek Date objesi
+ * @returns YYYY-MM-DD formatinda tarih string'i
  */
 export function tarihToString(tarih: Date): string {
   const yil = tarih.getFullYear();
   const ay = String(tarih.getMonth() + 1).padStart(2, '0');
   const gun = String(tarih.getDate()).padStart(2, '0');
-  return `${yil}-${ay}-${gun}`;
-}
-
-/**
- * String tarihi Date objesine çevirir
- */
-export function stringToTarih(tarihString: string): Date {
-  return new Date(tarihString);
-}
-
-/**
- * Bugünün Ramazan günlerinden biri olup olmadığını kontrol eder
- */
-export function bugunRamazanMi(): boolean {
-  const bugun = new Date();
-  bugun.setHours(0, 0, 0, 0);
   
-  const ramazanTarihleri = getRamazan2026Tarihleri();
-  return ramazanTarihleri.some(tarih => {
-    const tarihKopya = new Date(tarih);
-    tarihKopya.setHours(0, 0, 0, 0);
-    return tarihKopya.getTime() === bugun.getTime();
-  });
+  return yil + '-' + ay + '-' + gun;
 }
-
-/**
- * Belirli bir tarihin Ramazan günlerinden biri olup olmadığını kontrol eder
- */
-export function tarihRamazanMi(tarih: Date): boolean {
-  const tarihKopya = new Date(tarih);
-  tarihKopya.setHours(0, 0, 0, 0);
-  
-  const ramazanTarihleri = getRamazan2026Tarihleri();
-  return ramazanTarihleri.some(ramazanTarih => {
-    const ramazanKopya = new Date(ramazanTarih);
-    ramazanKopya.setHours(0, 0, 0, 0);
-    return ramazanKopya.getTime() === tarihKopya.getTime();
-  });
-}
-

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, SafeAreaView, Text, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, SafeAreaView, Text, Alert, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation } from '@react-navigation/native';
 import { DiniDuvarSaati } from '../components/DiniDuvarSaati';
 import { OrucSayaci } from '../components/OrucSayaci';
 import { OrucZinciri } from '../components/OrucZinciri';
@@ -11,6 +12,7 @@ import { useBildirimler } from '../hooks/useBildirimler';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 
 export default function HomeScreen() {
+  const navigation = useNavigation();
   // Bildirimleri başlat
   useBildirimler();
   const { vakitler, yukleniyor, hata } = useNamazVakitleri();
@@ -63,6 +65,46 @@ export default function HomeScreen() {
         <View style={styles.hadisContainer}>
           <HadisGosterici gunNumarasi={bugununGunNumarasi} />
         </View>
+
+        {/* Menü butonları */}
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('İstatistikler' as never)}
+          >
+            <Text style={styles.menuButtonText}>📊 İstatistikler</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('Dualar' as never)}
+          >
+            <Text style={styles.menuButtonText}>🤲 Dualar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('Kur\'an Ayetleri' as never)}
+          >
+            <Text style={styles.menuButtonText}>📖 Kur'an</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('Notlar' as never)}
+          >
+            <Text style={styles.menuButtonText}>📝 Notlar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('Ekstra Özellikler' as never)}
+          >
+            <Text style={styles.menuButtonText}>✨ Ekstra</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => navigation.navigate('Ayarlar' as never)}
+          >
+            <Text style={styles.menuButtonText}>⚙️ Ayarlar</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -91,6 +133,29 @@ const styles = StyleSheet.create({
   },
   hadisContainer: {
     marginTop: 8,
+  },
+  menuContainer: {
+    margin: 16,
+    marginTop: 24,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  menuButton: {
+    flex: 1,
+    minWidth: '30%',
+    padding: 16,
+    backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  menuButtonText: {
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
