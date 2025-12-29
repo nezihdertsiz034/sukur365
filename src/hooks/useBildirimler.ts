@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import { yukleBildirimAyarlari, yukleSehir } from '../utils/storage';
-import { getNamazVakitleri } from '../utils/namazVakitleri';
+import { getNamazVakitleri, getTarihNamazVakitleri, saattenDakikaCikar } from '../utils/namazVakitleri';
 import { getSahurVakitleri2026, sahurSaatiGectiMi } from '../utils/sahurVakitleri';
 import { getRamazan2026Tarihleri } from '../utils/ramazanTarihleri';
 import { bildirimEzanSesiBaslat, bildirimEzanSesiTemizle } from '../utils/ezanSesi';
@@ -52,59 +52,91 @@ export function useBildirimler() {
       yarin.setDate(yarin.getDate() + 1);
       yarin.setHours(0, 0, 0, 0);
 
-      // Sahur hatırlatıcısı
+      // Sahur hatırlatıcısı - İmsak vaktinden 45 dakika önce
       if (ayarlar.sahurAktif) {
-        const [sahurSaat, sahurDakika] = ayarlar.sahurSaat.split(':').map(Number);
-        const sahurTarih = new Date(yarin);
-        sahurTarih.setHours(sahurSaat, sahurDakika, 0, 0);
-
-        // Her gün için 30 günlük bildirim
-        for (let i = 0; i < 30; i++) {
-          const bildirimTarih = new Date(sahurTarih);
-          bildirimTarih.setDate(bildirimTarih.getDate() + i);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:50',message:'Sahur bildirimi oluşturuluyor',data:{i,bildirimTarih:bildirimTarih.toISOString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: '🌅 Sahur Vakti',
-              body: 'Sahur vaktiniz geldi. Oruç için hazırlanın!',
-              sound: true,
-            },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: bildirimTarih,
-            },
-          });
+        const ramazanTarihleri = getRamazan2026Tarihleri();
+        
+        // Her Ramazan günü için bildirim oluştur
+        for (let i = 0; i < ramazanTarihleri.length; i++) {
+          const ramazanTarihi = ramazanTarihleri[i];
+          
+          // Bu günün namaz vakitlerini al
+          const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
+          
+          if (gununVakitleri) {
+            // İmsak vaktinden 45 dakika önce sahur hatırlatıcısı
+            const sahurHatirlaticiSaat = saattenDakikaCikar(gununVakitleri.imsak, 45);
+            const [sahurSaat, sahurDakika] = sahurHatirlaticiSaat.split(':').map(Number);
+            
+            const bildirimTarih = new Date(ramazanTarihi);
+            bildirimTarih.setHours(sahurSaat, sahurDakika, 0, 0);
+            
+            // Eğer tarih geçmişse atla
+            if (bildirimTarih < bugun) {
+              continue;
+            }
+            
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: '🌅 Sahur Hatırlatıcısı',
+                body: `Sahur vaktiniz yaklaşıyor! İmsak: ${gununVakitleri.imsak}`,
+                sound: true,
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: bildirimTarih,
+              },
+            });
+          }
+          
+          // API rate limit için kısa bekleme
+          if (i < ramazanTarihleri.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         }
       }
 
-      // İftar hatırlatıcısı
+      // İftar hatırlatıcısı - Akşam vaktinden 45 dakika önce
       if (ayarlar.iftarAktif) {
-        const [iftarSaat, iftarDakika] = ayarlar.iftarSaat.split(':').map(Number);
-        const iftarTarih = new Date(yarin);
-        iftarTarih.setHours(iftarSaat, iftarDakika, 0, 0);
-
-        // Her gün için 30 günlük bildirim
-        for (let i = 0; i < 30; i++) {
-          const bildirimTarih = new Date(iftarTarih);
-          bildirimTarih.setDate(bildirimTarih.getDate() + i);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:75',message:'İftar bildirimi oluşturuluyor',data:{i,bildirimTarih:bildirimTarih.toISOString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: '🌇 İftar Vakti',
-              body: 'İftar vaktiniz geldi. Orucunuzu açabilirsiniz!',
-              sound: true,
-            },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: bildirimTarih,
-            },
-          });
+        const ramazanTarihleri = getRamazan2026Tarihleri();
+        
+        // Her Ramazan günü için bildirim oluştur
+        for (let i = 0; i < ramazanTarihleri.length; i++) {
+          const ramazanTarihi = ramazanTarihleri[i];
+          
+          // Bu günün namaz vakitlerini al
+          const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
+          
+          if (gununVakitleri) {
+            // Akşam vaktinden 45 dakika önce iftar hatırlatıcısı
+            const iftarHatirlaticiSaat = saattenDakikaCikar(gununVakitleri.aksam, 45);
+            const [iftarSaat, iftarDakika] = iftarHatirlaticiSaat.split(':').map(Number);
+            
+            const bildirimTarih = new Date(ramazanTarihi);
+            bildirimTarih.setHours(iftarSaat, iftarDakika, 0, 0);
+            
+            // Eğer tarih geçmişse atla
+            if (bildirimTarih < bugun) {
+              continue;
+            }
+            
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: '🌇 İftar Hatırlatıcısı',
+                body: `İftar vaktiniz yaklaşıyor! Akşam: ${gununVakitleri.aksam}`,
+                sound: true,
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: bildirimTarih,
+              },
+            });
+          }
+          
+          // API rate limit için kısa bekleme
+          if (i < ramazanTarihleri.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         }
       }
 

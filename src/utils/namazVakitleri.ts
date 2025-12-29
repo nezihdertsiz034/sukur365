@@ -134,3 +134,92 @@ export function saniyeToZaman(saniye: number): {
   return { saat, dakika, saniye: sn };
 }
 
+/**
+ * Belirli bir tarih için namaz vakitlerini getirir
+ * @param tarih Tarih
+ * @param sehirAdi Şehir adı (örn: "Istanbul", "Ankara")
+ * @returns Namaz vakitleri
+ */
+export async function getTarihNamazVakitleri(
+  tarih: Date,
+  sehirAdi: string = 'Istanbul'
+): Promise<NamazVakitleri | null> {
+  try {
+    const yil = tarih.getFullYear();
+    const ay = String(tarih.getMonth() + 1).padStart(2, '0');
+    const gun = tarih.getDate();
+    
+    // API için şehir adını normalize et
+    const normalizedSehir = sehirAdi
+      .replace(/İ/g, 'I')
+      .replace(/ı/g, 'i')
+      .replace(/Ş/g, 'S')
+      .replace(/ş/g, 's')
+      .replace(/Ğ/g, 'G')
+      .replace(/ğ/g, 'g')
+      .replace(/Ü/g, 'U')
+      .replace(/ü/g, 'u')
+      .replace(/Ö/g, 'O')
+      .replace(/ö/g, 'o')
+      .replace(/Ç/g, 'C')
+      .replace(/ç/g, 'c');
+    
+    const url = `https://api.aladhan.com/v1/calendarByCity/${yil}/${ay}?city=${encodeURIComponent(normalizedSehir)}&country=Turkey&method=13`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    if (!data.data || !Array.isArray(data.data)) {
+      return null;
+    }
+    
+    const gununVakitleri = data.data.find(
+      (item: any) => parseInt(item.date.gregorian.day) === gun
+    );
+
+    if (!gununVakitleri || !gununVakitleri.timings) {
+      return null;
+    }
+
+    const timings = gununVakitleri.timings;
+
+    return {
+      imsak: formatTime(timings.Fajr),
+      gunes: formatTime(timings.Sunrise),
+      ogle: formatTime(timings.Dhuhr),
+      ikindi: formatTime(timings.Asr),
+      aksam: formatTime(timings.Maghrib),
+      yatsi: formatTime(timings.Isha),
+    };
+  } catch (error) {
+    console.error('Tarih namaz vakitleri alınırken hata:', error);
+    return null;
+  }
+}
+
+/**
+ * Saat string'inden dakika çıkarır (45 dakika önce hesaplama için)
+ * @param saat "HH:mm" formatında saat
+ * @param cikarilacakDakika Çıkarılacak dakika (varsayılan: 45)
+ * @returns "HH:mm" formatında yeni saat
+ */
+export function saattenDakikaCikar(saat: string, cikarilacakDakika: number = 45): string {
+  const [saatDeger, dakikaDeger] = saat.split(':').map(Number);
+  let toplamDakika = saatDeger * 60 + dakikaDeger;
+  
+  toplamDakika -= cikarilacakDakika;
+  
+  // Eğer negatif olduysa, önceki güne geç
+  if (toplamDakika < 0) {
+    toplamDakika += 24 * 60; // 24 saat ekle
+  }
+  
+  const yeniSaat = Math.floor(toplamDakika / 60) % 24;
+  const yeniDakika = toplamDakika % 60;
+  
+  return `${String(yeniSaat).padStart(2, '0')}:${String(yeniDakika).padStart(2, '0')}`;
+}
+
