@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
+import { KuranAyeti } from '../types';
+import { ISLAMI_RENKLER } from '../constants/renkler';
+
+interface KuranAyetiKartProps {
+  ayet: KuranAyeti;
+  onFavoriToggle?: (ayetId: string) => void;
+}
+
+/**
+ * Kur'an ayeti kartı bileşeni
+ */
+export const KuranAyetiKart: React.FC<KuranAyetiKartProps> = ({
+  ayet,
+  onFavoriToggle,
+}) => {
+  const handlePaylas = async () => {
+    try {
+      const paylasMetni = `${ayet.sure} Suresi, ${ayet.ayetNumarasi}. Ayet\n\n${ayet.arapca}\n\n${ayet.turkceMeal}`;
+      
+      // Paylaşım için metin olarak paylaş
+      await Share.share({
+        message: paylasMetni,
+      });
+    } catch (error) {
+      console.error('Paylaşım hatası:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.sureBaslik}>{ayet.sure} Suresi</Text>
+          <Text style={styles.ayetNumarasi}>{ayet.ayetNumarasi}. Ayet</Text>
+        </View>
+        {onFavoriToggle && (
+          <TouchableOpacity onPress={() => onFavoriToggle(ayet.id)}>
+            <Text style={styles.favoriIcon}>
+              {ayet.favori ? '⭐' : '☆'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.arapcaContainer}>
+        <Text style={styles.arapca}>{ayet.arapca}</Text>
+      </View>
+
+      <View style={styles.mealContainer}>
+        <Text style={styles.mealLabel}>Türkçe Meali:</Text>
+        <Text style={styles.meal}>{ayet.turkceMeal}</Text>
+      </View>
+
+      <TouchableOpacity style={styles.paylasButonu} onPress={handlePaylas}>
+        <Text style={styles.paylasText}>📤 Paylaş</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  sureBaslik: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    marginBottom: 4,
+  },
+  ayetNumarasi: {
+    fontSize: 14,
+    color: ISLAMI_RENKLER.altinAcik,
+    fontWeight: '600',
+  },
+  favoriIcon: {
+    fontSize: 24,
+  },
+  arapcaContainer: {
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+  },
+  arapca: {
+    fontSize: 20,
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    textAlign: 'right',
+    lineHeight: 36,
+    writingDirection: 'rtl',
+    fontWeight: '500',
+  },
+  mealContainer: {
+    marginBottom: 16,
+  },
+  mealLabel: {
+    fontSize: 14,
+    color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  meal: {
+    fontSize: 16,
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    lineHeight: 26,
+    textAlign: 'justify',
+  },
+  paylasButonu: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  paylasText: {
+    fontSize: 16,
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    fontWeight: '600',
+  },
+});
+
+

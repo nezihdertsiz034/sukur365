@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Oruç Zinciri",
+    "slug": "oruc-zinciri",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/android-chrome-512x512.png",
+    "splash": {
+      "image": "./assets/android-chrome-512x512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a5f3f"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/apple-touch-icon.png",
+      "bundleIdentifier": "com.anonymous.oruczinciri"
+    },
+    "android": {
+      "icon": "./assets/android-chrome-192x192.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-chrome-512x512.png",
+        "backgroundColor": "#1a5f3f"
+      },
+      "package": "com.anonymous.oruczinciri"
+    },
+    "web": {
+      "favicon": "./assets/favicon.ico",
+      "manifest": "./assets/site.webmanifest"
+    }
+  }
+}
