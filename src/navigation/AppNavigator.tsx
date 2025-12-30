@@ -9,6 +9,7 @@ import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import SplashWelcomeScreen from '../screens/SplashWelcomeScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import HomeScreen from '../screens/HomeScreen';
 import IstatistiklerScreen from '../screens/IstatistiklerScreen';
@@ -40,6 +41,7 @@ const STORAGE_KEYS = {
  */
 export default function AppNavigator() {
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [splashGosterildi, setSplashGosterildi] = useState(false);
   const [onboardingTamamlandi, setOnboardingTamamlandi] = useState(false);
 
   useEffect(() => {
@@ -59,6 +61,10 @@ export default function AppNavigator() {
     }
   };
 
+  const handleSplashComplete = () => {
+    setSplashGosterildi(true);
+  };
+
   const handleOnboardingComplete = () => {
     setOnboardingTamamlandi(true);
   };
@@ -69,6 +75,11 @@ export default function AppNavigator() {
         <ActivityIndicator size="large" color={ISLAMI_RENKLER.altinAcik} />
       </View>
     );
+  }
+
+  // Önce Splash Welcome ekranı göster (şehir seçilmemişse)
+  if (!onboardingTamamlandi && !splashGosterildi) {
+    return <SplashWelcomeScreen onContinue={handleSplashComplete} />;
   }
 
   return (
@@ -104,85 +115,85 @@ export default function AppNavigator() {
             },
           }}
         >
-          <Drawer.Screen 
-            name="Ana Sayfa" 
+          <Drawer.Screen
+            name="Ana Sayfa"
             component={HomeScreen}
-            options={{ 
+            options={{
               title: '📿 Oruç Zinciri - Ramazan Rehberi',
             }}
           />
-        <Drawer.Screen 
-          name="İstatistikler" 
-          component={IstatistiklerScreen}
-          options={{ title: '📊 İstatistikler' }}
-        />
-        <Drawer.Screen 
-          name="Dualar" 
-          component={DualarScreen}
-          options={{ title: '🤲 Dualar' }}
-        />
-        <Drawer.Screen 
-          name="Tesbih Sayacı" 
-          component={TesbihScreen}
-          options={{ title: '📿 Tesbih Sayacı' }}
-        />
-        <Drawer.Screen 
-          name="Kur'an Ayetleri" 
-          component={KuranAyetleriScreen}
-          options={{ title: '📖 Kur\'an Ayetleri' }}
-        />
-        <Drawer.Screen 
-          name="Notlar" 
-          component={NotlarScreen}
-          options={{ title: '📝 Notlar' }}
-        />
-        <Drawer.Screen 
-          name="Zekat" 
-          component={ZekatScreen}
-          options={{ title: '💰 Zekat' }}
-        />
-        <Drawer.Screen 
-          name="Fitre" 
-          component={FitreScreen}
-          options={{ title: '🌾 Fitre' }}
-        />
-        <Drawer.Screen 
-          name="İftar Kalori" 
-          component={IftarKaloriScreen}
-          options={{ title: '🍽️ İftar Kalori' }}
-        />
-        <Drawer.Screen 
-          name="Kıble" 
-          component={KibleScreen}
-          options={{ title: '🧭 Kıble' }}
-        />
-        <Drawer.Screen 
-          name="Teravih" 
-          component={TeravihScreen}
-          options={{ title: '🕌 Teravih' }}
-        />
-        <Drawer.Screen 
-          name="Sadaka" 
-          component={SadakaScreen}
-          options={{ title: '💝 Sadaka' }}
-        />
-        <Drawer.Screen 
-          name="Su Hatırlatıcı" 
-          component={SuHatirlaticiScreen}
-          options={{ title: '💧 Su Hatırlatıcı' }}
-        />
-        <Drawer.Screen 
-          name="İftar Menü Önerileri" 
-          component={IftarMenuOnerileriScreen}
-          options={{ title: '💡 İftar Menü Önerileri' }}
-        />
-        <Drawer.Screen 
-          name="Ana Ekran Widget" 
-          component={WidgetScreen}
-          options={{ title: '🧩 Ana Ekran Widget' }}
-        />
-          <Drawer.Screen 
-            name="Ayarlar" 
+          <Drawer.Screen
+            name="İstatistikler"
+            component={IstatistiklerScreen}
+            options={{ title: '📊 İstatistikler' }}
+          />
+          <Drawer.Screen
+            name="Dualar"
+            component={DualarScreen}
+            options={{ title: '🤲 Dualar' }}
+          />
+          <Drawer.Screen
+            name="Tesbih Sayacı"
+            component={TesbihScreen}
+            options={{ title: '📿 Tesbih Sayacı' }}
+          />
+          <Drawer.Screen
+            name="Kur'an Ayetleri"
+            component={KuranAyetleriScreen}
+            options={{ title: '📖 Kur\'an Ayetleri' }}
+          />
+          <Drawer.Screen
+            name="Notlar"
+            component={NotlarScreen}
+            options={{ title: '📝 Notlar' }}
+          />
+          <Drawer.Screen
+            name="Zekat"
+            component={ZekatScreen}
+            options={{ title: '💰 Zekat' }}
+          />
+          <Drawer.Screen
+            name="Fitre"
+            component={FitreScreen}
+            options={{ title: '🌾 Fitre' }}
+          />
+          <Drawer.Screen
+            name="İftar Kalori"
+            component={IftarKaloriScreen}
+            options={{ title: '🍽️ İftar Kalori' }}
+          />
+          <Drawer.Screen
+            name="Kıble"
+            component={KibleScreen}
+            options={{ title: '🧭 Kıble' }}
+          />
+          <Drawer.Screen
+            name="Teravih"
+            component={TeravihScreen}
+            options={{ title: '🕌 Teravih' }}
+          />
+          <Drawer.Screen
+            name="Sadaka"
+            component={SadakaScreen}
+            options={{ title: '💝 Sadaka' }}
+          />
+          <Drawer.Screen
+            name="Su Hatırlatıcı"
+            component={SuHatirlaticiScreen}
+            options={{ title: '💧 Su Hatırlatıcı' }}
+          />
+          <Drawer.Screen
+            name="İftar Menü Önerileri"
+            component={IftarMenuOnerileriScreen}
+            options={{ title: '💡 İftar Menü Önerileri' }}
+          />
+          <Drawer.Screen
+            name="Ana Ekran Widget"
+            component={WidgetScreen}
+            options={{ title: '🧩 Ana Ekran Widget' }}
+          />
+          <Drawer.Screen
+            name="Ayarlar"
             component={AyarlarScreen}
             options={{ title: '⚙️ Ayarlar' }}
           />
