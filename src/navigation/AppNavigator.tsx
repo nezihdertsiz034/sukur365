@@ -16,7 +16,14 @@ import DualarScreen from '../screens/DualarScreen';
 import TesbihScreen from '../screens/TesbihScreen';
 import KuranAyetleriScreen from '../screens/KuranAyetleriScreen';
 import NotlarScreen from '../screens/NotlarScreen';
-import EkstraScreen from '../screens/EkstraScreen';
+import ZekatScreen from '../screens/ekstra/ZekatScreen';
+import FitreScreen from '../screens/ekstra/FitreScreen';
+import IftarKaloriScreen from '../screens/ekstra/IftarKaloriScreen';
+import KibleScreen from '../screens/ekstra/KibleScreen';
+import TeravihScreen from '../screens/ekstra/TeravihScreen';
+import SadakaScreen from '../screens/ekstra/SadakaScreen';
+import SuHatirlaticiScreen from '../screens/ekstra/SuHatirlaticiScreen';
+import IftarMenuOnerileriScreen from '../screens/ekstra/IftarMenuOnerileriScreen';
 import WidgetScreen from '../screens/WidgetScreen';
 import AyarlarScreen from '../screens/AyarlarScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -130,9 +137,44 @@ export default function AppNavigator() {
           options={{ title: '📝 Notlar' }}
         />
         <Drawer.Screen 
-          name="Ekstra Özellikler" 
-          component={EkstraScreen}
-          options={{ title: '✨ Ekstra Özellikler' }}
+          name="Zekat" 
+          component={ZekatScreen}
+          options={{ title: '💰 Zekat' }}
+        />
+        <Drawer.Screen 
+          name="Fitre" 
+          component={FitreScreen}
+          options={{ title: '🌾 Fitre' }}
+        />
+        <Drawer.Screen 
+          name="İftar Kalori" 
+          component={IftarKaloriScreen}
+          options={{ title: '🍽️ İftar Kalori' }}
+        />
+        <Drawer.Screen 
+          name="Kıble" 
+          component={KibleScreen}
+          options={{ title: '🧭 Kıble' }}
+        />
+        <Drawer.Screen 
+          name="Teravih" 
+          component={TeravihScreen}
+          options={{ title: '🕌 Teravih' }}
+        />
+        <Drawer.Screen 
+          name="Sadaka" 
+          component={SadakaScreen}
+          options={{ title: '💝 Sadaka' }}
+        />
+        <Drawer.Screen 
+          name="Su Hatırlatıcı" 
+          component={SuHatirlaticiScreen}
+          options={{ title: '💧 Su Hatırlatıcı' }}
+        />
+        <Drawer.Screen 
+          name="İftar Menü Önerileri" 
+          component={IftarMenuOnerileriScreen}
+          options={{ title: '💡 İftar Menü Önerileri' }}
         />
         <Drawer.Screen 
           name="Ana Ekran Widget" 
@@ -175,7 +217,14 @@ const DRAWER_SECTIONS = [
     baslik: 'Ekstra',
     items: [
       { name: 'Notlar', etiket: 'Notlar', ikon: '📝' },
-      { name: 'Ekstra Özellikler', etiket: 'Ekstra Özellikler', ikon: '✨' },
+      { name: 'Zekat', etiket: 'Zekat', ikon: '💰' },
+      { name: 'Fitre', etiket: 'Fitre', ikon: '🌾' },
+      { name: 'İftar Kalori', etiket: 'İftar Kalori', ikon: '🍽️' },
+      { name: 'Kıble', etiket: 'Kıble', ikon: '🧭' },
+      { name: 'Teravih', etiket: 'Teravih', ikon: '🕌' },
+      { name: 'Sadaka', etiket: 'Sadaka', ikon: '💝' },
+      { name: 'Su Hatırlatıcı', etiket: 'Su Hatırlatıcı', ikon: '💧' },
+      { name: 'İftar Menü Önerileri', etiket: 'İftar Menü Önerileri', ikon: '💡' },
       { name: 'Ana Ekran Widget', etiket: 'Ana Ekran Widget', ikon: '🧩' },
     ],
   },

@@ -25,6 +25,11 @@
         "foregroundImage": "./assets/android-chrome-512x512.png",
         "backgroundColor": "#1a5f3f"
       },
+      "splash": {
+        "image": "./assets/android-chrome-512x512.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1a5f3f"
+      },
       "package": "com.anonymous.oruczinciri",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -38,6 +43,7 @@
       "manifest": "./assets/site.webmanifest"
     },
     "plugins": [
+      "expo-splash-screen",
       [
         "expo-notifications",
         {

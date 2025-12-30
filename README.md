@@ -46,6 +46,7 @@
 - Arama özelliği
 
 ### ✨ Ekstra Özellikler
+Bu özellikler menüde ayrı ayrı sayfa olarak yer alır.
 - **🧭 Kıble Yönü** - GPS ile kıble tespiti
 - **🕌 Teravih Takibi** - Günlük teravih işaretleme
 - **💝 Sadaka Takibi** - Sadaka ekleme ve toplam gösterimi
@@ -74,7 +75,7 @@
 
 - **React Native** (Expo SDK 54)
 - **TypeScript**
-- **React Navigation** (Stack Navigator)
+- **React Navigation** (Drawer Navigator)
 - **AsyncStorage** - Yerel veri saklama
 - **Expo Notifications** - Bildirimler
 - **Expo AV** - Ses çalma (ezan sesi)
@@ -132,7 +133,15 @@ oruc/
 │   │   ├── TesbihScreen.tsx
 │   │   ├── KuranAyetleriScreen.tsx
 │   │   ├── NotlarScreen.tsx
-│   │   ├── EkstraScreen.tsx
+│   │   ├── ekstra/         # Ekstra sayfalar
+│   │   │   ├── ZekatScreen.tsx
+│   │   │   ├── FitreScreen.tsx
+│   │   │   ├── IftarKaloriScreen.tsx
+│   │   │   ├── KibleScreen.tsx
+│   │   │   ├── TeravihScreen.tsx
+│   │   │   ├── SadakaScreen.tsx
+│   │   │   ├── SuHatirlaticiScreen.tsx
+│   │   │   └── IftarMenuOnerileriScreen.tsx
 │   │   ├── WidgetScreen.tsx
 │   │   └── AyarlarScreen.tsx
 │   ├── hooks/             # Custom Hooks
