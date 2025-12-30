@@ -17,7 +17,12 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/android-chrome-512x512.png",
-      "bundleIdentifier": "com.anonymous.oruczinciri"
+      "bundleIdentifier": "com.anonymous.oruczinciri",
+      "splash": {
+        "image": "./assets/android-chrome-512x512.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1a5f3f"
+      }
     },
     "android": {
       "icon": "./assets/android-chrome-192x192.png",

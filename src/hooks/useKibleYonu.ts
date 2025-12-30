@@ -24,20 +24,39 @@ export function useKibleYonu() {
         }
 
         // Mevcut konumu al
-        const konum = await Location.getCurrentPositionAsync({});
+        const konum = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
         const { latitude, longitude } = konum.coords;
 
-        // Kıble yönü hesapla (basit yaklaşım)
-        // Türkiye için yaklaşık güney-doğu yönü
-        const mekkeLat = 21.4225;
-        const mekkeLon = 39.8262;
+        // Kabe koordinatları
+        const kabeLat = 21.4225;
+        const kabeLon = 39.8262;
 
-        // Açı hesaplama (basitleştirilmiş)
-        const dLat = mekkeLat - latitude;
-        const dLon = mekkeLon - longitude;
+        // Derece -> Radyan dönüşümü
+        const toRad = (deg: number) => (deg * Math.PI) / 180;
+        const toDeg = (rad: number) => (rad * 180) / Math.PI;
 
-        let aci = (Math.atan2(dLon, dLat) * 180) / Math.PI;
+        // Kullanıcı ve Kabe koordinatlarını radyana çevir
+        const lat1 = toRad(latitude);
+        const lon1 = toRad(longitude);
+        const lat2 = toRad(kabeLat);
+        const lon2 = toRad(kabeLon);
+
+        // Doğru Qibla bearing formülü
+        // bearing = atan2(sin(Δλ), cos(φ1)·tan(φ2) − sin(φ1)·cos(Δλ))
+        const dLon = lon2 - lon1;
+
+        const x = Math.sin(dLon);
+        const y = Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(dLon);
+
+        let aci = toDeg(Math.atan2(x, y));
+
+        // Açıyı 0-360 aralığına normalize et
         if (aci < 0) aci += 360;
+
+        console.log(`[Kıble] Konum: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        console.log(`[Kıble] Hesaplanan açı: ${aci.toFixed(2)}°`);
 
         // Yön belirleme
         let yon: KibleYonu['yon'] = 'G';
@@ -54,8 +73,8 @@ export function useKibleYonu() {
       } catch (err) {
         setHata(err instanceof Error ? err.message : 'Kıble yönü hesaplanamadı');
         console.error('Kıble yönü hesaplanırken hata:', err);
-        // Varsayılan değer (Türkiye için yaklaşık)
-        setKibleYonu({ aci: 135, yon: 'GD' });
+        // Varsayılan değer (Türkiye için yaklaşık - İstanbul bazlı)
+        setKibleYonu({ aci: 152, yon: 'GD' });
       } finally {
         setYukleniyor(false);
       }
