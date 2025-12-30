@@ -104,7 +104,6 @@ export default function AppNavigator() {
               letterSpacing: 0.5,
             },
             headerShadowVisible: false,
-            headerBackTitleVisible: false,
             headerLeft: () => (
               <DrawerToggleButton tintColor={ISLAMI_RENKLER.yaziBeyaz} />
             ),
@@ -253,45 +252,96 @@ const AppDrawerContent = (props: DrawerContentComponentProps) => {
   return (
     <View style={styles.drawerContainer}>
       <BackgroundDecor />
+
+      {/* Dekoratif üst çizgiler */}
+      <View style={styles.decorTopContainer}>
+        <View style={styles.decorLine1} />
+        <View style={styles.decorLine2} />
+      </View>
+
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={styles.drawerScroll}
+        showsVerticalScrollIndicator={false}
       >
+        {/* Premium Header */}
         <View style={styles.drawerHeader}>
+          <View style={styles.headerGlow} />
           <View style={styles.drawerBadge}>
-            <Text style={styles.drawerBadgeText}>📿</Text>
+            <View style={styles.badgeInner}>
+              <Text style={styles.drawerBadgeText}>📿</Text>
+            </View>
           </View>
-          <View>
+          <View style={styles.headerTextContainer}>
             <Text style={styles.drawerTitle}>Oruç Zinciri</Text>
-            <Text style={styles.drawerSubtitle}>Ramazan Rehberi 2026</Text>
+            <View style={styles.subtitleRow}>
+              <View style={styles.subtitleDot} />
+              <Text style={styles.drawerSubtitle}>Ramazan Rehberi 2026</Text>
+              <View style={styles.subtitleDot} />
+            </View>
           </View>
         </View>
 
-        {DRAWER_SECTIONS.map((bolum) => (
+        {/* Dekoratif ayraç */}
+        <View style={styles.headerDivider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerIcon}>☪</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {DRAWER_SECTIONS.map((bolum, bolumIndex) => (
           <View key={bolum.baslik} style={styles.drawerSection}>
-            <Text style={styles.drawerSectionTitle}>{bolum.baslik}</Text>
-            {bolum.items.map((item) => {
+            <View style={styles.sectionTitleContainer}>
+              <View style={styles.sectionTitleLine} />
+              <Text style={styles.drawerSectionTitle}>{bolum.baslik}</Text>
+              <View style={styles.sectionTitleLine} />
+            </View>
+            {bolum.items.map((item, itemIndex) => {
               const aktif = aktifRoute === item.name;
               return (
                 <TouchableOpacity
                   key={item.name}
-                  style={[styles.drawerItem, aktif && styles.drawerItemActive]}
+                  style={[
+                    styles.drawerItem,
+                    aktif && styles.drawerItemActive,
+                  ]}
                   onPress={() => props.navigation.navigate(item.name)}
-                  activeOpacity={0.85}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.drawerItemIcon}>{item.ikon}</Text>
+                  {/* Aktif gösterge çizgisi */}
+                  {aktif && <View style={styles.activeIndicator} />}
+
+                  <View style={[styles.iconContainer, aktif && styles.iconContainerActive]}>
+                    <Text style={styles.drawerItemIcon}>{item.ikon}</Text>
+                  </View>
+
                   <Text style={[styles.drawerItemText, aktif && styles.drawerItemTextActive]}>
                     {item.etiket}
                   </Text>
-                  {aktif && <View style={styles.drawerItemDot} />}
+
+                  {aktif && (
+                    <View style={styles.activeArrow}>
+                      <Text style={styles.arrowText}>›</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
           </View>
         ))}
+
+        {/* Alt boşluk */}
+        <View style={styles.bottomSpacer} />
       </DrawerContentScrollView>
+
+      {/* Premium Footer */}
       <View style={styles.drawerFooter}>
-        <Text style={styles.drawerFooterText}>Bereketli bir Ramazan dileriz.</Text>
+        <View style={styles.footerDivider} />
+        <View style={styles.footerContent}>
+          <Text style={styles.footerIcon}>🌙</Text>
+          <Text style={styles.drawerFooterText}>Bereketli bir Ramazan dileriz</Text>
+        </View>
+        <Text style={styles.footerVersion}>v1.0.0</Text>
       </View>
     </View>
   );
@@ -308,95 +358,256 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
   },
+  decorTopContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    overflow: 'hidden',
+  },
+  decorLine1: {
+    position: 'absolute',
+    top: 20,
+    right: -50,
+    width: 150,
+    height: 1,
+    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+    transform: [{ rotate: '-45deg' }],
+  },
+  decorLine2: {
+    position: 'absolute',
+    top: 40,
+    right: -30,
+    width: 100,
+    height: 1,
+    backgroundColor: 'rgba(218, 165, 32, 0.15)',
+    transform: [{ rotate: '-45deg' }],
+  },
   drawerScroll: {
     paddingBottom: 16,
   },
   drawerHeader: {
-    padding: 20,
+    padding: 24,
+    paddingTop: 16,
     marginBottom: 8,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    position: 'relative',
+  },
+  headerGlow: {
+    position: 'absolute',
+    top: 20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(218, 165, 32, 0.08)',
   },
   drawerBadge: {
-    width: 52,
-    height: 52,
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: 'rgba(218, 165, 32, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(218, 165, 32, 0.3)',
+    marginBottom: 16,
+    shadowColor: ISLAMI_RENKLER.altinAcik,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  badgeInner: {
+    width: 56,
+    height: 56,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   drawerBadgeText: {
-    fontSize: 24,
+    fontSize: 28,
+  },
+  headerTextContainer: {
+    alignItems: 'center',
   },
   drawerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '800',
-    color: ISLAMI_RENKLER.yaziBeyaz,
+    color: ISLAMI_RENKLER.altinAcik,
     fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(218, 165, 32, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  subtitleDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ISLAMI_RENKLER.altinOrta,
+    marginHorizontal: 8,
   },
   drawerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
-    marginTop: 4,
     fontFamily: TYPOGRAPHY.body,
+    letterSpacing: 0.5,
+  },
+  headerDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(218, 165, 32, 0.3)',
+  },
+  dividerIcon: {
+    fontSize: 14,
+    color: ISLAMI_RENKLER.altinOrta,
+    marginHorizontal: 12,
   },
   drawerSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionTitleLine: {
+    width: 8,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 8,
   },
   drawerSectionTitle: {
-    fontSize: 12,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 10,
+    color: ISLAMI_RENKLER.altinOrta,
     fontFamily: TYPOGRAPHY.body,
+    fontWeight: '600',
   },
   drawerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 16,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    position: 'relative',
+    overflow: 'hidden',
   },
   drawerItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(218, 165, 32, 0.12)',
+    borderColor: 'rgba(218, 165, 32, 0.25)',
+    shadowColor: ISLAMI_RENKLER.altinAcik,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    backgroundColor: ISLAMI_RENKLER.altinAcik,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  iconContainerActive: {
+    backgroundColor: 'rgba(218, 165, 32, 0.2)',
   },
   drawerItemIcon: {
     fontSize: 18,
-    marginRight: 12,
   },
   drawerItemText: {
+    flex: 1,
     fontSize: 15,
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontFamily: TYPOGRAPHY.body,
+    letterSpacing: 0.2,
   },
   drawerItemTextActive: {
     fontWeight: '700',
     fontFamily: TYPOGRAPHY.display,
+    color: ISLAMI_RENKLER.altinAcik,
   },
-  drawerItemDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: ISLAMI_RENKLER.altinAcik,
-    marginLeft: 'auto',
+  activeArrow: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowText: {
+    fontSize: 18,
+    color: ISLAMI_RENKLER.altinAcik,
+    fontWeight: '700',
+  },
+  bottomSpacer: {
+    height: 20,
   },
   drawerFooter: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 24,
+    paddingTop: 12,
+  },
+  footerDivider: {
+    height: 1,
+    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+    marginBottom: 16,
+  },
+  footerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   drawerFooterText: {
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: TYPOGRAPHY.body,
+    fontStyle: 'italic',
+  },
+  footerVersion: {
+    color: 'rgba(255, 255, 255, 0.3)',
+    fontSize: 10,
+    fontFamily: TYPOGRAPHY.body,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
