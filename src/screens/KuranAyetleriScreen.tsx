@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import { KURAN_AYETLERI, getAyetByGun } from '../constants/kuranAyetleri';
 import { KuranAyetiKart } from '../components/KuranAyetiKart';
 import { useOrucZinciri } from '../hooks/useOrucZinciri';
+import { BackgroundDecor } from '../components/BackgroundDecor';
 
 export default function KuranAyetleriScreen() {
   const { zincirHalkalari } = useOrucZinciri();
@@ -38,6 +40,7 @@ export default function KuranAyetleriScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>📖 Kur'an Ayetleri</Text>
 
@@ -107,6 +110,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   content: {
     padding: 20,
@@ -118,6 +122,8 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   modButonlari: {
     flexDirection: 'row',
@@ -141,10 +147,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   modButonuTextAktif: {
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
+    fontFamily: TYPOGRAPHY.display,
   },
   gunlukBilgi: {
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
@@ -157,9 +165,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: ISLAMI_RENKLER.altinAcik,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.2,
   },
   ayetlerListContainer: {
     gap: 16,
   },
 });
-

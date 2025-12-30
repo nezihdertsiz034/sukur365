@@ -161,3 +161,5 @@ export function sahurSaatiGectiMi(sahurSaati: string): boolean {
   return simdiToplam >= sahurToplam;
 }
 
+
+

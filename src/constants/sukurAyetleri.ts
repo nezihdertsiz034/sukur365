@@ -232,3 +232,5 @@ export function getSukurAyetiByGun(gunNumarasi: number): SukurAyeti {
   return SUKUR_AYETLERI[index];
 }
 
+
+

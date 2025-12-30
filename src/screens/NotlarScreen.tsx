@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import { useNotlar } from '../hooks/useNotlar';
 import { Not } from '../types';
 import { tarihToString } from '../utils/ramazanTarihleri';
+import { BackgroundDecor } from '../components/BackgroundDecor';
 
 export default function NotlarScreen() {
   const { notlar, yukleniyor, notKaydet, notSil } = useNotlar();
@@ -96,6 +98,7 @@ export default function NotlarScreen() {
   if (yukleniyor) {
     return (
       <SafeAreaView style={styles.container}>
+        <BackgroundDecor />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={ISLAMI_RENKLER.altinAcik} />
         </View>
@@ -105,6 +108,7 @@ export default function NotlarScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>📝 Notlar</Text>
@@ -210,6 +214,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   centerContainer: {
     flex: 1,
@@ -230,6 +235,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   ekleButonu: {
     backgroundColor: ISLAMI_RENKLER.altinOrta,
@@ -241,6 +248,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 14,
+    fontFamily: TYPOGRAPHY.body,
   },
   bosContainer: {
     alignItems: 'center',
@@ -250,11 +258,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 8,
+    fontFamily: TYPOGRAPHY.display,
   },
   bosAltText: {
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
   },
   notlarListContainer: {
     gap: 12,
@@ -276,6 +286,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: ISLAMI_RENKLER.altinAcik,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.2,
   },
   silButonu: {
     padding: 4,
@@ -288,11 +300,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 8,
+    fontFamily: TYPOGRAPHY.display,
   },
   notIcerik: {
     fontSize: 15,
     color: ISLAMI_RENKLER.yaziBeyaz,
     lineHeight: 22,
+    fontFamily: TYPOGRAPHY.body,
   },
   modalOverlay: {
     flex: 1,
@@ -314,6 +328,8 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.3,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -324,6 +340,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    fontFamily: TYPOGRAPHY.body,
   },
   textArea: {
     height: 150,
@@ -350,6 +367,6 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
 });
-

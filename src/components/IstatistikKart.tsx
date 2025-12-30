@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 
 interface IstatistikKartProps {
   baslik: string;
@@ -53,6 +54,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 8,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
   },
   deger: {
     fontSize: 36,
@@ -60,11 +62,12 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 6,
     letterSpacing: 0.5,
+    fontFamily: TYPOGRAPHY.display,
   },
   altBaslik: {
     fontSize: 12,
     color: ISLAMI_RENKLER.altinAcik,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
   },
 });
-

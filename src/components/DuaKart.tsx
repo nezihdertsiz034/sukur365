@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Dua } from '../types';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 
 interface DuaKartProps {
   dua: Dua;
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     flex: 1,
     letterSpacing: 0.5,
+    fontFamily: TYPOGRAPHY.display,
   },
   favoriIcon: {
     fontSize: 24,
@@ -112,6 +114,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 32,
     writingDirection: 'rtl',
+    fontFamily: TYPOGRAPHY.arabic,
   },
   okunusContainer: {
     marginBottom: 12,
@@ -121,12 +124,14 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 4,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   okunus: {
     fontSize: 15,
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontStyle: 'italic',
     lineHeight: 22,
+    fontFamily: TYPOGRAPHY.body,
   },
   anlamContainer: {
     marginBottom: 12,
@@ -136,11 +141,13 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 4,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   anlam: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
     lineHeight: 24,
+    fontFamily: TYPOGRAPHY.body,
   },
   kaynak: {
     fontSize: 13,
@@ -148,6 +155,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontStyle: 'italic',
     marginTop: 8,
+    fontFamily: TYPOGRAPHY.body,
   },
   genisletButonu: {
     marginTop: 12,
@@ -160,7 +168,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.altinAcik,
     textAlign: 'center',
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
 });
-
 

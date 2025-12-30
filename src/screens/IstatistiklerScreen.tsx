@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
-import { useIstatistikler } from '../hooks/useIstatistikler';
+import { TYPOGRAPHY } from '../constants/typography';
+import { BackgroundDecor } from '../components/BackgroundDecor';
+import useIstatistikler from '../hooks/useIstatistikler';
 import { IstatistikKart } from '../components/IstatistikKart';
 import { ProgressBar } from '../components/ProgressBar';
 import { Rozet } from '../components/Rozet';
@@ -14,6 +16,7 @@ export default function IstatistiklerScreen() {
   if (yukleniyor) {
     return (
       <SafeAreaView style={styles.container}>
+        <BackgroundDecor />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={ISLAMI_RENKLER.altinAcik} />
           <Text style={styles.yukleniyorText}>İstatistikler yükleniyor...</Text>
@@ -25,6 +28,7 @@ export default function IstatistiklerScreen() {
   if (hata) {
     return (
       <SafeAreaView style={styles.container}>
+        <BackgroundDecor />
         <View style={styles.centerContainer}>
           <Text style={styles.hataText}>{hata}</Text>
         </View>
@@ -38,6 +42,7 @@ export default function IstatistiklerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>📊 İstatistikler</Text>
 
@@ -110,6 +115,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   centerContainer: {
     flex: 1,
@@ -126,16 +132,20 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 24,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   yukleniyorText: {
     marginTop: 12,
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    fontFamily: TYPOGRAPHY.body,
   },
   hataText: {
     fontSize: 16,
     color: ISLAMI_RENKLER.kirmiziYumusak,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
   },
   kartlarContainer: {
     flexDirection: 'row',
@@ -148,12 +158,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   progressBaslik: {
     fontSize: 18,
     fontWeight: '600',
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 12,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.2,
   },
   haftalikContainer: {
     marginBottom: 24,
@@ -163,6 +177,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 16,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.3,
   },
   haftalikKartlar: {
     flexDirection: 'row',
@@ -183,11 +199,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 8,
+    fontFamily: TYPOGRAPHY.body,
   },
   haftalikDeger: {
     fontSize: 24,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   rozetlerContainer: {
     marginBottom: 24,
@@ -203,9 +222,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 20,
+    fontFamily: TYPOGRAPHY.body,
   },
   paylasContainer: {
     marginTop: 24,
   },
 });
-

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import HomeScreen from '../screens/HomeScreen';
 import IstatistiklerScreen from '../screens/IstatistiklerScreen';
@@ -70,6 +71,7 @@ export default function AppNavigator() {
             },
             headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
             headerTitleStyle: {
+              fontFamily: TYPOGRAPHY.display,
               fontWeight: '800',
               fontSize: 20,
               letterSpacing: 0.5,
@@ -129,4 +131,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import {
   yukleBildirimAyarlari,
   kaydetBildirimAyarlari,
@@ -23,6 +24,7 @@ import { SEHIRLER } from '../constants/sehirler';
 import { temizleOrucVerileri } from '../utils/orucStorage';
 import { SaatSecici } from '../components/SaatSecici';
 import { useBildirimler } from '../hooks/useBildirimler';
+import { BackgroundDecor } from '../components/BackgroundDecor';
 
 export default function AyarlarScreen() {
   const { bildirimleriAyarla } = useBildirimler();
@@ -124,6 +126,7 @@ export default function AyarlarScreen() {
   if (yukleniyor || !bildirimAyarlari || !sehir) {
     return (
       <SafeAreaView style={styles.container}>
+        <BackgroundDecor />
         <View style={styles.centerContainer}>
           <Text style={styles.yukleniyorText}>Ayarlar yükleniyor...</Text>
         </View>
@@ -133,6 +136,7 @@ export default function AyarlarScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>⚙️ Ayarlar</Text>
 
@@ -361,6 +365,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   centerContainer: {
     flex: 1,
@@ -377,10 +382,13 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 24,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   yukleniyorText: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    fontFamily: TYPOGRAPHY.body,
   },
   ayarBolumu: {
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
@@ -395,6 +403,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 16,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.2,
   },
   ayarItem: {
     flexDirection: 'row',
@@ -407,6 +417,7 @@ const styles = StyleSheet.create({
   ayarItemText: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
+    fontFamily: TYPOGRAPHY.body,
   },
   ayarItemOk: {
     fontSize: 24,
@@ -427,11 +438,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.body,
   },
   switchAltLabel: {
     fontSize: 12,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginTop: 4,
+    fontFamily: TYPOGRAPHY.body,
   },
   saatButonu: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -445,6 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
+    fontFamily: TYPOGRAPHY.display,
   },
   sifirlaButonu: {
     backgroundColor: ISLAMI_RENKLER.kirmiziYumusak,
@@ -456,11 +470,13 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
   hakkindaText: {
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     lineHeight: 22,
+    fontFamily: TYPOGRAPHY.body,
   },
   modalOverlay: {
     flex: 1,
@@ -483,6 +499,8 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.3,
   },
   sehirItem: {
     flexDirection: 'row',
@@ -498,10 +516,12 @@ const styles = StyleSheet.create({
   sehirItemText: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
+    fontFamily: TYPOGRAPHY.body,
   },
   sehirItemTextSecili: {
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
+    fontFamily: TYPOGRAPHY.display,
   },
   seciliIsaret: {
     fontSize: 20,
@@ -518,6 +538,6 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
 });
-

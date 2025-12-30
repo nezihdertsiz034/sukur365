@@ -53,5 +53,4 @@ export const ISLAMI_RENKLER = {
   yaziBeyaz: '#FFFFFF',      // Saf beyaz
   yaziBeyazYumusak: '#F5F5F5', // Yumuşak beyaz
   yaziBeyazAcik: '#E0E0E0',   // Açık beyaz
-} as const;
-
+};

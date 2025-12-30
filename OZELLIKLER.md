@@ -296,3 +296,5 @@ Herhangi bir sorun veya öneri için lütfen iletişime geçin.
 **Versiyon:** 1.0.0
 **Son Güncelleme:** 2026
 
+
+

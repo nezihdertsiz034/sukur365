@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/android-chrome-512x512.png",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/android-chrome-512x512.png",
       "resizeMode": "contain",
@@ -24,11 +25,34 @@
         "foregroundImage": "./assets/android-chrome-512x512.png",
         "backgroundColor": "#1a5f3f"
       },
-      "package": "com.anonymous.oruczinciri"
+      "package": "com.anonymous.oruczinciri",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.ico",
       "manifest": "./assets/site.webmanifest"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-chrome-192x192.png",
+          "color": "#1a5f3f",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Uygulama konum bilginizi kıble yönünü hesaplamak için kullanır."
+        }
+      ]
+    ],
+    "scheme": "oruc-zinciri"
   }
 }

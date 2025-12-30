@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 
 interface MenuItem {
   id: string;
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: ISLAMI_RENKLER.yaziBeyaz,
     letterSpacing: 0.3,
+    fontFamily: TYPOGRAPHY.display,
   },
   acilmaIkon: {
     fontSize: 16,
@@ -182,12 +184,14 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 2,
     letterSpacing: 0.2,
+    fontFamily: TYPOGRAPHY.display,
   },
   menuItemAciklama: {
     fontSize: 12,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     fontWeight: '500',
     lineHeight: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
   menuItemOk: {
     fontSize: 20,
@@ -196,4 +200,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-

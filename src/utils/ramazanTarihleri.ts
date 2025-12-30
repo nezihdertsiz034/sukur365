@@ -1,39 +1,47 @@
 /**
- * 2026 Ramazan ayi tarihleri ve yardimci fonksiyonlar
- * 
- * 2026 Ramazan ayi: 27 Subat 2026 - 28 Mart 2026 (30 gun)
+ * Ramazan 2026 tarihleri ve yardımcı fonksiyonlar
+ * Ramazan 2026: 27 Şubat 2026 - 28 Mart 2026 (30 gün)
  */
 
 /**
- * 2026 Ramazan ayinin tum gunlerini Date array olarak dondurur
- * @returns 30 gunluk Ramazan tarihleri dizisi
+ * Ramazan 2026'nın tüm tarihlerini döndürür
+ * @returns Date[] - Ramazan günlerinin tarihleri
  */
 export function getRamazan2026Tarihleri(): Date[] {
-  const ramazanTarihleri: Date[] = [];
+  const tarihler: Date[] = [];
   
-  // 2026 Ramazan ayi baslangici: 27 Subat 2026
-  const baslangicTarihi = new Date(2026, 1, 27);
+  // Ramazan 2026 başlangıcı: 27 Şubat 2026
+  const baslangic = new Date(2026, 1, 27); // Ay 0-indexed (1 = Şubat)
   
-  // 30 gunluk Ramazan ayi
+  // 30 gün Ramazan
   for (let i = 0; i < 30; i++) {
-    const tarih = new Date(baslangicTarihi);
-    tarih.setDate(baslangicTarihi.getDate() + i);
+    const tarih = new Date(baslangic);
+    tarih.setDate(baslangic.getDate() + i);
     tarih.setHours(0, 0, 0, 0);
-    ramazanTarihleri.push(tarih);
+    tarihler.push(tarih);
   }
   
-  return ramazanTarihleri;
+  return tarihler;
 }
 
 /**
- * Date objesini YYYY-MM-DD formatinda string'e cevirir
- * @param tarih - Cevrilecek Date objesi
- * @returns YYYY-MM-DD formatinda tarih string'i
+ * Tarihi YYYY-MM-DD formatında string'e çevirir
+ * @param tarih - Çevrilecek tarih
+ * @returns string - YYYY-MM-DD formatında tarih
  */
 export function tarihToString(tarih: Date): string {
   const yil = tarih.getFullYear();
   const ay = String(tarih.getMonth() + 1).padStart(2, '0');
   const gun = String(tarih.getDate()).padStart(2, '0');
-  
-  return yil + '-' + ay + '-' + gun;
+  return `${yil}-${ay}-${gun}`;
+}
+
+/**
+ * String formatındaki tarihi Date objesine çevirir
+ * @param tarihString - YYYY-MM-DD formatında tarih string'i
+ * @returns Date - Tarih objesi
+ */
+export function stringToTarih(tarihString: string): Date {
+  const [yil, ay, gun] = tarihString.split('-').map(Number);
+  return new Date(yil, ay - 1, gun);
 }

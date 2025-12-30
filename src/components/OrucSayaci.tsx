@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { NamazVakitleri } from '../types';
 import { saatFarkiHesapla, saniyeToZaman } from '../utils/namazVakitleri';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import { getSukurAyetiByGun, SukurAyeti } from '../constants/sukurAyetleri';
 import { useOrucZinciri } from '../hooks/useOrucZinciri';
 
@@ -102,25 +104,140 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
     ? '🌇 Akşam namazına kalan süre' 
     : '✨ Oruç tamamlandı! Allah kabul etsin! 🎉';
 
+  // Toplam süreyi hesapla (imsak-akşam arası)
+  const toplamSure = durum === 'beklemede' 
+    ? (() => {
+        const [imsakSaat, imsakDakika] = vakitler.imsak.split(':').map(Number);
+        const [aksamSaat, aksamDakika] = vakitler.aksam.split(':').map(Number);
+        const imsakToplam = imsakSaat * 3600 + imsakDakika * 60;
+        const aksamToplam = aksamSaat * 3600 + aksamDakika * 60;
+        return aksamToplam - imsakToplam;
+      })()
+    : (() => {
+        const [imsakSaat, imsakDakika] = vakitler.imsak.split(':').map(Number);
+        const [aksamSaat, aksamDakika] = vakitler.aksam.split(':').map(Number);
+        const imsakToplam = imsakSaat * 3600 + imsakDakika * 60;
+        const aksamToplam = aksamSaat * 3600 + aksamDakika * 60;
+        return aksamToplam - imsakToplam;
+      })();
+
+  // Progress yüzdesi (0-100)
+  const progressYuzde = toplamSure > 0 ? ((toplamSure - kalanSure) / toplamSure) * 100 : 0;
+  
+  // Kadran için açı hesaplama (0-360 derece)
+  const kadranAcisi = (progressYuzde / 100) * 360;
+  
+  // SVG path için arc hesaplama
+  const kadranYaricap = 100;
+  const kadranMerkez = 120;
+  const startAngle = -90; // 12 yönünden başla
+  const endAngle = startAngle + kadranAcisi;
+  
+  const radToDeg = (rad: number) => rad * (180 / Math.PI);
+  const degToRad = (deg: number) => deg * (Math.PI / 180);
+  
+  const startX = kadranMerkez + kadranYaricap * Math.cos(degToRad(startAngle));
+  const startY = kadranMerkez + kadranYaricap * Math.sin(degToRad(startAngle));
+  const endX = kadranMerkez + kadranYaricap * Math.cos(degToRad(endAngle));
+  const endY = kadranMerkez + kadranYaricap * Math.sin(degToRad(endAngle));
+  
+  const largeArcFlag = kadranAcisi > 180 ? 1 : 0;
+  const arcPath = `M ${kadranMerkez} ${kadranMerkez} L ${startX} ${startY} A ${kadranYaricap} ${kadranYaricap} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+
   return (
     <View style={styles.container}>
       <Text style={styles.durumText}>{durumMetni}</Text>
       
       {durum !== 'bitti' && (
-        <View style={styles.sayacContainer}>
-          <View style={styles.zamanKutusu}>
-            <Text style={styles.zamanSayisi}>{String(zaman.saat).padStart(2, '0')}</Text>
-            <Text style={styles.zamanEtiketi}>Saat</Text>
+        <View style={styles.kadranContainer}>
+          {/* Dairesel Kadran */}
+          <View style={styles.kadranWrapper}>
+            <Svg width={240} height={240} style={styles.kadranSvg}>
+              {/* Arka plan dairesi */}
+              <Circle
+                cx={kadranMerkez}
+                cy={kadranMerkez}
+                r={kadranYaricap}
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.1)"
+                strokeWidth="3"
+              />
+              
+              {/* Progress arc */}
+              {kalanSure > 0 && (
+                <Path
+                  d={arcPath}
+                  fill={durum === 'devam' ? ISLAMI_RENKLER.altinOrta : ISLAMI_RENKLER.yesilOrta}
+                  opacity={0.3}
+                />
+              )}
+              
+              {/* İç dairesel desenler (dini motif) */}
+              <Circle
+                cx={kadranMerkez}
+                cy={kadranMerkez}
+                r={kadranYaricap - 15}
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.15)"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+              />
+              
+              {/* Merkez nokta */}
+              <Circle
+                cx={kadranMerkez}
+                cy={kadranMerkez}
+                r={4}
+                fill={ISLAMI_RENKLER.altinAcik}
+              />
+              
+              {/* Saat işaretleri (12, 3, 6, 9) */}
+              {[0, 90, 180, 270].map((angle, index) => {
+                const x = kadranMerkez + (kadranYaricap - 5) * Math.cos(degToRad(angle - 90));
+                const y = kadranMerkez + (kadranYaricap - 5) * Math.sin(degToRad(angle - 90));
+                return (
+                  <Circle
+                    key={index}
+                    cx={x}
+                    cy={y}
+                    r={3}
+                    fill={ISLAMI_RENKLER.yaziBeyaz}
+                    opacity={0.6}
+                  />
+                );
+              })}
+            </Svg>
+            
+            {/* Merkezde zaman bilgisi */}
+            <View style={styles.merkezBilgi}>
+              <Text style={styles.merkezArapca}>الله</Text>
+              <View style={styles.zamanSatir}>
+                <Text style={styles.merkezSayi}>{String(zaman.saat).padStart(2, '0')}</Text>
+                <Text style={styles.merkezIkiNokta}>:</Text>
+                <Text style={styles.merkezSayi}>{String(zaman.dakika).padStart(2, '0')}</Text>
+                <Text style={styles.merkezIkiNokta}>:</Text>
+                <Text style={styles.merkezSayi}>{String(zaman.saniye).padStart(2, '0')}</Text>
+              </View>
+              <Text style={styles.merkezEtiket}>
+                {durum === 'beklemede' ? 'İmsak\'a Kalan' : 'İftar\'a Kalan'}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.ikiNokta}>:</Text>
-          <View style={styles.zamanKutusu}>
-            <Text style={styles.zamanSayisi}>{String(zaman.dakika).padStart(2, '0')}</Text>
-            <Text style={styles.zamanEtiketi}>Dakika</Text>
-          </View>
-          <Text style={styles.ikiNokta}>:</Text>
-          <View style={styles.zamanKutusu}>
-            <Text style={styles.zamanSayisi}>{String(zaman.saniye).padStart(2, '0')}</Text>
-            <Text style={styles.zamanEtiketi}>Saniye</Text>
+          
+          {/* Alt bilgi kartları */}
+          <View style={styles.bilgiKartlari}>
+            <View style={styles.bilgiKarti}>
+              <Text style={styles.bilgiKartSayi}>{String(zaman.saat).padStart(2, '0')}</Text>
+              <Text style={styles.bilgiKartEtiket}>Saat</Text>
+            </View>
+            <View style={styles.bilgiKarti}>
+              <Text style={styles.bilgiKartSayi}>{String(zaman.dakika).padStart(2, '0')}</Text>
+              <Text style={styles.bilgiKartEtiket}>Dakika</Text>
+            </View>
+            <View style={styles.bilgiKarti}>
+              <Text style={styles.bilgiKartSayi}>{String(zaman.saniye).padStart(2, '0')}</Text>
+              <Text style={styles.bilgiKartEtiket}>Saniye</Text>
+            </View>
           </View>
         </View>
       )}
@@ -199,45 +316,95 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+    fontFamily: TYPOGRAPHY.display,
   },
-  sayacContainer: {
-    flexDirection: 'row',
+  kadranContainer: {
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 24,
   },
-  zamanKutusu: {
+  kadranWrapper: {
+    position: 'relative',
+    width: 240,
+    height: 240,
+    marginBottom: 20,
+  },
+  kadranSvg: {
+    position: 'absolute',
+  },
+  merkezBilgi: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 24,
-    borderRadius: 24,
-    minWidth: 100,
-    borderWidth: 2,
-    borderColor: ISLAMI_RENKLER.altinOrta,
-    shadowColor: ISLAMI_RENKLER.altinOrta,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    justifyContent: 'center',
   },
-  zamanSayisi: {
-    fontSize: 52,
-    fontWeight: '900',
-    color: ISLAMI_RENKLER.yaziBeyaz,
+  merkezArapca: {
+    fontSize: 32,
+    color: ISLAMI_RENKLER.altinAcik,
+    fontWeight: '600',
     marginBottom: 8,
-    letterSpacing: 2,
+    opacity: 0.4,
+    fontFamily: TYPOGRAPHY.arabic,
   },
-  zamanEtiketi: {
+  zamanSatir: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  merkezSayi: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    letterSpacing: 1,
+    fontFamily: TYPOGRAPHY.display,
+  },
+  merkezIkiNokta: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    marginHorizontal: 2,
+  },
+  merkezEtiket: {
     fontSize: 11,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     textTransform: 'uppercase',
     fontWeight: '600',
+    letterSpacing: 0.5,
+    fontFamily: TYPOGRAPHY.body,
   },
-  ikiNokta: {
-    fontSize: 44,
-    fontWeight: 'bold',
+  bilgiKartlari: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  bilgiKarti: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    minWidth: 70,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  bilgiKartSayi: {
+    fontSize: 20,
+    fontWeight: '800',
     color: ISLAMI_RENKLER.yaziBeyaz,
-    marginHorizontal: 12,
+    marginBottom: 4,
+    letterSpacing: 1,
+    fontFamily: TYPOGRAPHY.display,
+  },
+  bilgiKartEtiket: {
+    fontSize: 9,
+    color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   bittiContainer: {
     padding: 24,
@@ -266,12 +433,14 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.altinAcik,
     marginBottom: 4,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
   },
   ayetNumarasi: {
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     textAlign: 'center',
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   arapcaContainer: {
     maxHeight: 120,
@@ -283,7 +452,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 32,
     fontWeight: '500',
-    fontFamily: 'System',
+    fontFamily: TYPOGRAPHY.arabic,
   },
   mealContainer: {
     marginTop: 12,
@@ -298,6 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: TYPOGRAPHY.body,
   },
   meal: {
     fontSize: 15,
@@ -305,6 +475,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: '500',
     textAlign: 'justify',
+    fontFamily: TYPOGRAPHY.body,
   },
   vakitBilgisi: {
     width: '100%',
@@ -318,11 +489,12 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     textAlign: 'center',
     fontWeight: '500',
+    fontFamily: TYPOGRAPHY.body,
   },
   vakitSaat: {
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.display,
   },
 });
-

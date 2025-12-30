@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import { KibleYonu as KibleYonuComponent } from '../components/KibleYonu';
 import { useKibleYonu } from '../hooks/useKibleYonu';
 import {
@@ -27,6 +28,8 @@ import {
 import { useBildirimler } from '../hooks/useBildirimler';
 import { Teravih, Sadaka } from '../types';
 import { tarihToString } from '../utils/ramazanTarihleri';
+import { BackgroundDecor } from '../components/BackgroundDecor';
+import { IFTAR_MENU_KATEGORILERI } from '../constants/iftarMenuleri';
 
 export default function EkstraScreen() {
   const { kibleYonu, yukleniyor: kibleYukleniyor, hata: kibleHata } = useKibleYonu();
@@ -49,6 +52,14 @@ export default function EkstraScreen() {
   const [fitreSonuc, setFitreSonuc] = useState<number | null>(null);
   const [kaloriMenuler, setKaloriMenuler] = useState<Array<{isim: string, kalori: string}>>([]);
   const [toplamKalori, setToplamKalori] = useState(0);
+  const menuSecimleriOlustur = () =>
+    IFTAR_MENU_KATEGORILERI.map((kategori) => ({
+      id: kategori.id,
+      baslik: kategori.baslik,
+      ikon: kategori.ikon,
+      secim: kategori.secenekler[Math.floor(Math.random() * kategori.secenekler.length)],
+    }));
+  const [iftarMenuSecimleri, setIftarMenuSecimleri] = useState(menuSecimleriOlustur);
 
   useEffect(() => {
     verileriYukle();
@@ -242,8 +253,13 @@ export default function EkstraScreen() {
     setToplamKalori(toplam);
   };
 
+  const menuOnerileriniYenile = () => {
+    setIftarMenuSecimleri(menuSecimleriOlustur());
+  };
+
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>✨ Ekstra Özellikler</Text>
 
@@ -461,21 +477,27 @@ export default function EkstraScreen() {
 
         {/* İftar Menüsü Önerileri */}
         <View style={styles.bolum}>
-          <Text style={styles.bolumBaslik}>💡 İftar Menüsü Önerileri</Text>
+          <View style={styles.bolumHeader}>
+            <Text style={styles.bolumBaslik}>💡 İftar Menüsü Önerileri</Text>
+            <TouchableOpacity
+              style={styles.yenileButonu}
+              onPress={menuOnerileriniYenile}
+            >
+              <Text style={styles.yenileButonuText}>Yenile</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.menuListContainer}>
-            {[
-              'Çorba (Mercimek, Yayla, Tarhana)',
-              'Ana Yemek (Etli yemek, Tavuk, Balık)',
-              'Pilav veya Makarna',
-              'Salata',
-              'Tatlı (Güllaç, Baklava, Sütlaç)',
-              'Hurma ve Su',
-            ].map((menu, index) => (
-              <View key={index} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>• {menu}</Text>
+            {iftarMenuSecimleri.map((menu) => (
+              <View key={menu.id} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>
+                  {menu.ikon} {menu.baslik}: {menu.secim}
+                </Text>
               </View>
             ))}
           </View>
+          <Text style={styles.bilgiText}>
+            Farklı seçenekler için yenile butonuna dokunabilirsiniz.
+          </Text>
         </View>
       </ScrollView>
 
@@ -565,6 +587,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   content: {
     padding: 20,
@@ -576,6 +599,8 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 24,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   bolum: {
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
@@ -595,6 +620,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.2,
   },
   ekleButonu: {
     backgroundColor: ISLAMI_RENKLER.altinOrta,
@@ -604,10 +631,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  yenileButonu: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  yenileButonuText: {
+    color: ISLAMI_RENKLER.yaziBeyaz,
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
+  },
   ekleButonuText: {
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: TYPOGRAPHY.display,
   },
   istatistikKart: {
     alignItems: 'center',
@@ -620,10 +662,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
     marginBottom: 8,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.6,
   },
   istatistikLabel: {
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    fontFamily: TYPOGRAPHY.body,
   },
   listeContainer: {
     marginTop: 16,
@@ -639,15 +684,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.display,
   },
   listeItemTarih: {
     fontSize: 12,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
+    fontFamily: TYPOGRAPHY.body,
   },
   listeItemAciklama: {
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginTop: 4,
+    fontFamily: TYPOGRAPHY.body,
   },
   switchContainer: {
     flexDirection: 'row',
@@ -658,6 +706,7 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
+    fontFamily: TYPOGRAPHY.body,
   },
   aralikContainer: {
     marginTop: 16,
@@ -667,6 +716,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginTop: 12,
     fontStyle: 'italic',
+    fontFamily: TYPOGRAPHY.body,
   },
   menuListContainer: {
     marginTop: 12,
@@ -679,6 +729,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: ISLAMI_RENKLER.yaziBeyaz,
     lineHeight: 24,
+    fontFamily: TYPOGRAPHY.body,
   },
   modalOverlay: {
     flex: 1,
@@ -700,12 +751,15 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 12,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.3,
   },
   modalAciklama: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 24,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -716,6 +770,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    fontFamily: TYPOGRAPHY.body,
   },
   textArea: {
     height: 100,
@@ -742,6 +797,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
   hesaplaButonu: {
     backgroundColor: ISLAMI_RENKLER.altinOrta,
@@ -754,6 +810,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: TYPOGRAPHY.body,
   },
   sonucKart: {
     marginTop: 16,
@@ -768,17 +825,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 8,
+    fontFamily: TYPOGRAPHY.body,
   },
   sonucDeger: {
     fontSize: 28,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.altinAcik,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   sonucAciklama: {
     fontSize: 12,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     fontStyle: 'italic',
+    fontFamily: TYPOGRAPHY.body,
   },
   kaloriItem: {
     flexDirection: 'row',
@@ -794,6 +855,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    fontFamily: TYPOGRAPHY.body,
   },
   silButonu: {
     backgroundColor: 'rgba(198, 40, 40, 0.3)',
@@ -807,6 +869,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: TYPOGRAPHY.display,
   },
   toplamKaloriKart: {
     marginTop: 16,
@@ -823,11 +886,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   toplamKaloriDeger: {
     fontSize: 24,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yesilParlak,
+    fontFamily: TYPOGRAPHY.display,
   },
 });
-

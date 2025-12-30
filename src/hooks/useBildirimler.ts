@@ -6,16 +6,21 @@ import { getSahurVakitleri2026, sahurSaatiGectiMi } from '../utils/sahurVakitler
 import { getRamazan2026Tarihleri } from '../utils/ramazanTarihleri';
 import { bildirimEzanSesiBaslat, bildirimEzanSesiTemizle } from '../utils/ezanSesi';
 
-// Bildirim handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Bildirim handler - Expo Go'da bazı özellikler sınırlı olabilir
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (error) {
+  // Expo Go'da bazı bildirim özellikleri çalışmayabilir
+  console.log('Bildirim handler ayarlanırken uyarı (Expo Go sınırlaması):', error);
+}
 
 /**
  * Bildirimleri yöneten hook
@@ -26,7 +31,7 @@ export function useBildirimler() {
     fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:21',message:'bildirimleriAyarla çağrıldı',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     try {
-      // Bildirim izni iste
+      // Bildirim izni iste (Expo Go'da local notifications çalışır)
       const { status } = await Notifications.requestPermissionsAsync();
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:25',message:'Bildirim izni durumu',data:{status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
@@ -168,23 +173,33 @@ export function useBildirimler() {
         }
       }
 
-      // Namaz vakitleri bildirimleri
-      if (ayarlar.namazVakitleriAktif && vakitler) {
-        // Her namaz vakti için bildirim - 30 günlük
-        const namazVakitleri = [
-          { isim: 'Sabah', saat: vakitler.imsak },
-          { isim: 'Öğle', saat: vakitler.ogle },
-          { isim: 'İkindi', saat: vakitler.ikindi },
-          { isim: 'Akşam', saat: vakitler.aksam },
-          { isim: 'Yatsı', saat: vakitler.yatsi },
-        ];
+      // Namaz vakitleri bildirimleri - Ramazan 2026 tarihleri için
+      if (ayarlar.namazVakitleriAktif) {
+        const ramazanTarihleri = getRamazan2026Tarihleri();
+        
+        // Her Ramazan günü için o günün namaz vakitlerini al
+        for (let i = 0; i < ramazanTarihleri.length; i++) {
+          const ramazanTarihi = ramazanTarihleri[i];
+          
+          // Bu günün namaz vakitlerini al
+          const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
+          
+          if (!gununVakitleri) {
+            continue;
+          }
+          
+          const namazVakitleri = [
+            { isim: 'Sabah', saat: gununVakitleri.imsak },
+            { isim: 'Öğle', saat: gununVakitleri.ogle },
+            { isim: 'İkindi', saat: gununVakitleri.ikindi },
+            { isim: 'Akşam', saat: gununVakitleri.aksam },
+            { isim: 'Yatsı', saat: gununVakitleri.yatsi },
+          ];
 
-        // Her gün için 30 günlük bildirim
-        for (let gun = 0; gun < 30; gun++) {
+          // Her namaz vakti için bildirim oluştur
           for (const vakit of namazVakitleri) {
             const [saat, dakika] = vakit.saat.split(':').map(Number);
-            const vakitTarih = new Date(yarin);
-            vakitTarih.setDate(vakitTarih.getDate() + gun);
+            const vakitTarih = new Date(ramazanTarihi);
             vakitTarih.setHours(saat, dakika, 0, 0);
 
             // Eğer tarih geçmişse atla
@@ -196,7 +211,7 @@ export function useBildirimler() {
               content: {
                 title: `🕌 ${vakit.isim} Namazı`,
                 body: `${vakit.isim} namazı vakti geldi.`,
-                sound: true, // Bildirim sesi
+                sound: true,
                 data: {
                   vakit: vakit.isim,
                   ezanSesi: ayarlar.ezanSesiAktif ?? true,
@@ -207,6 +222,11 @@ export function useBildirimler() {
                 date: vakitTarih,
               },
             });
+          }
+          
+          // API rate limit için kısa bekleme
+          if (i < ramazanTarihleri.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         }
       }
@@ -277,7 +297,13 @@ export function useBildirimler() {
         }
       }
     } catch (error) {
-      console.error('Bildirimler ayarlanırken hata:', error);
+      // Expo Go'da remote push notifications çalışmaz, bu normal
+      // Local notifications çalışmaya devam eder
+      if (error instanceof Error && error.message.includes('remote notifications')) {
+        console.log('Not: Expo Go\'da remote push notifications desteklenmiyor. Local notifications kullanılıyor.');
+      } else {
+        console.error('Bildirimler ayarlanırken hata:', error);
+      }
     }
   }, []);
 

@@ -101,9 +101,15 @@ export interface Teravih {
   olusturmaTarihi: number; // timestamp
 }
 
+// Tesbih sayacı
+export interface TesbihSayaciVeri {
+  sayac: number;
+  hedef: number;
+  guncellemeTarihi: number; // timestamp
+}
+
 // Kıble yönü
 export interface KibleYonu {
   aci: number; // 0-360 derece
   yon: 'K' | 'KB' | 'B' | 'GB' | 'G' | 'GD' | 'D' | 'KD';
 }
-

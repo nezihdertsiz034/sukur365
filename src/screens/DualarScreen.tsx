@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 import { Dua } from '../types';
 import { DUALAR, getDualarByKategori } from '../constants/dualars';
 import { DuaKart } from '../components/DuaKart';
+import { BackgroundDecor } from '../components/BackgroundDecor';
 
 type DuaKategori = 'sahur' | 'iftar' | 'oruc' | 'genel' | 'tumu';
 
@@ -45,6 +47,7 @@ export default function DualarScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>🤲 Dualar</Text>
 
@@ -96,6 +99,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
+    overflow: 'hidden',
   },
   content: {
     padding: 20,
@@ -107,6 +111,8 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: TYPOGRAPHY.display,
+    letterSpacing: 0.4,
   },
   kategoriContainer: {
     marginBottom: 24,
@@ -136,13 +142,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   kategoriTextAktif: {
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: 'bold',
+    fontFamily: TYPOGRAPHY.display,
   },
   dualarlistContainer: {
     gap: 16,
   },
 });
-

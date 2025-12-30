@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { KuranAyeti } from '../types';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { TYPOGRAPHY } from '../constants/typography';
 
 interface KuranAyetiKartProps {
   ayet: KuranAyeti;
@@ -90,11 +91,13 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     marginBottom: 6,
     letterSpacing: 0.5,
+    fontFamily: TYPOGRAPHY.display,
   },
   ayetNumarasi: {
     fontSize: 14,
     color: ISLAMI_RENKLER.altinAcik,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   favoriIcon: {
     fontSize: 24,
@@ -114,6 +117,7 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     writingDirection: 'rtl',
     fontWeight: '500',
+    fontFamily: TYPOGRAPHY.arabic,
   },
   mealContainer: {
     marginBottom: 16,
@@ -123,12 +127,14 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     marginBottom: 8,
     fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
   },
   meal: {
     fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
     lineHeight: 26,
     textAlign: 'justify',
+    fontFamily: TYPOGRAPHY.body,
   },
   paylasButonu: {
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
@@ -148,7 +154,7 @@ const styles = StyleSheet.create({
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: '700',
     letterSpacing: 0.3,
+    fontFamily: TYPOGRAPHY.body,
   },
 });
-
 
