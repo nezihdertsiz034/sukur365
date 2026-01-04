@@ -1,12 +1,13 @@
-import { Audio } from 'expo-av';
+import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 import * as Notifications from 'expo-notifications';
 
 /**
  * Ezan sesi çalma yardımcı fonksiyonları
  */
 
-let soundObject: Audio.Sound | null = null;
+let audioPlayer: AudioPlayer | null = null;
 let listener: Notifications.Subscription | null = null;
+let playbackCheckInterval: NodeJS.Timeout | null = null;
 
 /**
  * Ezan sesini çalar
@@ -14,20 +15,10 @@ let listener: Notifications.Subscription | null = null;
  */
 export async function ezanSesiCal(sesUrl?: string): Promise<void> {
   try {
-    // Önceki ses varsa durdur
-    if (soundObject) {
-      await soundObject.unloadAsync();
-      soundObject = null;
+    // Önceki ses varsa durdur ve temizle
+    if (audioPlayer) {
+      await ezanSesiDurdur();
     }
-
-    // Ses modunu ayarla
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    });
 
     // Ezan sesi URL'i (online kaynak - güvenilir bir kaynak)
     // Not: Gerçek uygulamada yerel dosya kullanılması önerilir
@@ -36,24 +27,36 @@ export async function ezanSesiCal(sesUrl?: string): Promise<void> {
     // Alternatif: Yerel dosya kullanmak isterseniz
     // const ezanUrl = require('../assets/ezan.mp3');
 
-    // Ses dosyasını yükle ve çal
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: ezanUrl },
-      { shouldPlay: true, volume: 1.0, isLooping: false }
-    );
-
-    soundObject = sound;
-
-    // Ses bittiğinde temizle
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        sound.unloadAsync();
-        soundObject = null;
+    // AudioPlayer oluştur ve kaynağı yükle
+    audioPlayer = createAudioPlayer(ezanUrl);
+    
+    // Ses bittiğinde otomatik temizleme için interval başlat
+    playbackCheckInterval = setInterval(() => {
+      if (audioPlayer && audioPlayer.duration && audioPlayer.currentTime) {
+        // Ses bittiğinde (currentTime >= duration - küçük tolerans)
+        if (audioPlayer.currentTime >= audioPlayer.duration - 0.2) {
+          ezanSesiDurdur();
+        }
       }
-    });
+    }, 500); // Her 500ms'de bir kontrol et
+
+    // Ses çalmayı başlat
+    audioPlayer.play();
   } catch (error) {
     console.error('Ezan sesi çalınırken hata:', error);
     // Hata durumunda sessiz devam et
+    if (audioPlayer) {
+      try {
+        audioPlayer.release();
+      } catch (e) {
+        // Release hatası görmezden gel
+      }
+      audioPlayer = null;
+    }
+    if (playbackCheckInterval) {
+      clearInterval(playbackCheckInterval);
+      playbackCheckInterval = null;
+    }
   }
 }
 
@@ -62,13 +65,22 @@ export async function ezanSesiCal(sesUrl?: string): Promise<void> {
  */
 export async function ezanSesiDurdur(): Promise<void> {
   try {
-    if (soundObject) {
-      await soundObject.stopAsync();
-      await soundObject.unloadAsync();
-      soundObject = null;
+    if (playbackCheckInterval) {
+      clearInterval(playbackCheckInterval);
+      playbackCheckInterval = null;
+    }
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.release();
+      audioPlayer = null;
     }
   } catch (error) {
     console.error('Ezan sesi durdurulurken hata:', error);
+    audioPlayer = null;
+    if (playbackCheckInterval) {
+      clearInterval(playbackCheckInterval);
+      playbackCheckInterval = null;
+    }
   }
 }
 
