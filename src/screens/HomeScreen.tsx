@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -8,54 +8,25 @@ import { BackgroundDecor } from '../components/BackgroundDecor';
 import { OrucSayaci } from '../components/OrucSayaci';
 import { OrucZinciri } from '../components/OrucZinciri';
 import { useNamazVakitleri } from '../hooks/useNamazVakitleri';
+import { GUNUN_AYETLERI, HADISLER, HIZLI_ERISIM_1, HIZLI_ERISIM_2 } from '../constants/homeScreenConstants';
 
 const { width } = Dimensions.get('window');
-
-// Günün ayetleri
-const GUNUN_AYETLERI = [
-  { ayet: '"Ey iman edenler! Oruç, sizden öncekilere farz kılındığı gibi size de farz kılındı."', kaynak: 'Bakara, 183' },
-  { ayet: '"Şüphesiz Allah sabredenlerle beraberdir."', kaynak: 'Bakara, 153' },
-  { ayet: '"Kim Allah\'a tevekkül ederse, O ona yeter."', kaynak: 'Talak, 3' },
-  { ayet: '"Rabbinizden mağfiret dileyin. Çünkü O çok bağışlayandır."', kaynak: 'Nuh, 10' },
-  { ayet: '"Allah\'ı çok zikredin ki kurtuluşa eresiniz."', kaynak: 'Cuma, 10' },
-  { ayet: '"Ve Rabbine sabret. Çünkü sen gözlerimizin önündesin."', kaynak: 'Tur, 48' },
-  { ayet: '"Namazı dosdoğru kılın, zekatı verin."', kaynak: 'Bakara, 43' },
-];
-
-// Hadis-i Şerifler
-const HADISLER = [
-  { hadis: '"Oruç bir kalkandır. Oruçlu kötü söz söylemesin."', kaynak: 'Buhari' },
-  { hadis: '"Sizin en hayırlınız, ahlakı en güzel olanınızdır."', kaynak: 'Buhari' },
-  { hadis: '"Kolaylaştırın, zorlaştırmayın. Müjdeleyin, nefret ettirmeyin."', kaynak: 'Buhari' },
-  { hadis: '"Güzel söz sadakadır."', kaynak: 'Buhari' },
-  { hadis: '"Temizlik imanın yarısıdır."', kaynak: 'Müslim' },
-];
-
-// Hızlı erişim kartları - Satır 1 (4 adet)
-const HIZLI_ERISIM_1 = [
-  { id: 'tesbih', baslik: 'Tesbih', ikon: '📿', tab: 'Takip', screen: 'TesbihSayaci', renk: '#FFD700' },
-  { id: 'dualar', baslik: 'Dualar', ikon: '🤲', tab: 'İbadet', screen: 'DualarMain', renk: '#90EE90' },
-  { id: 'kible', baslik: 'Kıble', ikon: '🧭', tab: 'Araçlar', screen: 'Kıble', renk: '#87CEEB' },
-  { id: 'esma', baslik: 'Esmaül Hüsna', ikon: '☪️', tab: 'İbadet', screen: 'EsmaulHusna', renk: '#DDA0DD' },
-];
-
-// Hızlı erişim kartları - Satır 2 (4 adet) 
-const HIZLI_ERISIM_2 = [
-  { id: 'peygamber', baslik: 'Hz. Muhammed', ikon: '🌙', tab: 'İbadet', screen: 'PeygamberHayati', renk: '#98FB98' },
-  { id: 'kuran', baslik: 'Kur\'an', ikon: '📖', tab: 'İbadet', screen: 'KuranAyetleri', renk: '#FFB6C1' },
-  { id: 'zekat', baslik: 'Zekat', ikon: '💰', tab: 'Araçlar', screen: 'Zekat', renk: '#F0E68C' },
-  { id: 'istatistik', baslik: 'İstatistikler', ikon: '📊', tab: 'Takip', screen: 'IstatistiklerMain', renk: '#B0C4DE' },
-];
 
 export default function HomeScreen() {
   const { vakitler, yukleniyor, hata } = useNamazVakitleri();
   const navigation = useNavigation<any>();
 
-  // Günün ayeti ve hadisi (günlük değişir)
-  const gunIndex = new Date().getDate() % GUNUN_AYETLERI.length;
-  const hadisIndex = new Date().getDate() % HADISLER.length;
-  const gununAyeti = GUNUN_AYETLERI[gunIndex];
-  const gununHadisi = HADISLER[hadisIndex];
+  // Günün ayeti ve hadisi (günlük değişir) - useMemo ile optimize edildi
+  const { gununAyeti, gununHadisi } = useMemo(() => {
+    const bugun = new Date().getDate();
+    const gunIndex = bugun % GUNUN_AYETLERI.length;
+    const hadisIndex = bugun % HADISLER.length;
+
+    return {
+      gununAyeti: GUNUN_AYETLERI[gunIndex],
+      gununHadisi: HADISLER[hadisIndex],
+    };
+  }, []); // Boş dependency array - sadece component mount olduğunda hesapla
 
   const handleHizliErisim = (tab: string, screen?: string) => {
     if (screen) {

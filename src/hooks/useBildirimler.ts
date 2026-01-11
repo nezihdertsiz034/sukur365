@@ -5,6 +5,8 @@ import { getNamazVakitleri, getTarihNamazVakitleri, saattenDakikaCikar } from '.
 import { getSahurVakitleri2026, sahurSaatiGectiMi } from '../utils/sahurVakitleri';
 import { getRamazan2026Tarihleri } from '../utils/ramazanTarihleri';
 import { bildirimEzanSesiBaslat, bildirimEzanSesiTemizle } from '../utils/ezanSesi';
+import { logger } from '../utils/logger';
+import { handleError } from '../utils/errorHandler';
 
 // Bildirim handler - Expo Go'da bazı özellikler sınırlı olabilir
 try {
@@ -19,7 +21,7 @@ try {
   });
 } catch (error) {
   // Expo Go'da bazı bildirim özellikleri çalışmayabilir
-  console.log('Bildirim handler ayarlanırken uyarı (Expo Go sınırlaması):', error);
+  logger.warn('Bildirim handler ayarlanırken uyarı (Expo Go sınırlaması)', error, 'useBildirimler');
 }
 
 /**
@@ -27,17 +29,16 @@ try {
  */
 export function useBildirimler() {
   const bildirimleriAyarla = useCallback(async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:21',message:'bildirimleriAyarla çağrıldı',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    logger.info('Bildirimler ayarlanıyor...', undefined, 'useBildirimler');
+
     try {
       // Bildirim izni iste (Expo Go'da local notifications çalışır)
       const { status } = await Notifications.requestPermissionsAsync();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:25',message:'Bildirim izni durumu',data:{status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
+
+      logger.debug('Bildirim izni durumu', { status }, 'useBildirimler');
+
       if (status !== 'granted') {
-        console.log('Bildirim izni verilmedi');
+        logger.warn('Bildirim izni verilmedi', undefined, 'useBildirimler');
         return;
       }
 
@@ -45,9 +46,8 @@ export function useBildirimler() {
       const sehir = await yukleSehir();
       const sehirAdi = sehir?.isim || 'Istanbul';
       const vakitler = await getNamazVakitleri(sehirAdi);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:31',message:'Vakitler yüklendi',data:{vakitler:!!vakitler,hasVakitler:!!vakitler},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
+
+      logger.debug('Bildirim ayarları ve vakitler yüklendi', { sehir: sehirAdi }, 'useBildirimler');
 
       // Mevcut bildirimleri temizle
       await Notifications.cancelAllScheduledNotificationsAsync();
@@ -60,27 +60,27 @@ export function useBildirimler() {
       // Sahur hatırlatıcısı - İmsak vaktinden 45 dakika önce
       if (ayarlar.sahurAktif) {
         const ramazanTarihleri = getRamazan2026Tarihleri();
-        
+
         // Her Ramazan günü için bildirim oluştur
         for (let i = 0; i < ramazanTarihleri.length; i++) {
           const ramazanTarihi = ramazanTarihleri[i];
-          
+
           // Bu günün namaz vakitlerini al
           const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
-          
+
           if (gununVakitleri) {
             // İmsak vaktinden 45 dakika önce sahur hatırlatıcısı
             const sahurHatirlaticiSaat = saattenDakikaCikar(gununVakitleri.imsak, 45);
             const [sahurSaat, sahurDakika] = sahurHatirlaticiSaat.split(':').map(Number);
-            
+
             const bildirimTarih = new Date(ramazanTarihi);
             bildirimTarih.setHours(sahurSaat, sahurDakika, 0, 0);
-            
+
             // Eğer tarih geçmişse atla
             if (bildirimTarih < bugun) {
               continue;
             }
-            
+
             await Notifications.scheduleNotificationAsync({
               content: {
                 title: '🌅 Sahur Hatırlatıcısı',
@@ -93,7 +93,7 @@ export function useBildirimler() {
               },
             });
           }
-          
+
           // API rate limit için kısa bekleme
           if (i < ramazanTarihleri.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -104,27 +104,27 @@ export function useBildirimler() {
       // İftar hatırlatıcısı - Akşam vaktinden 45 dakika önce
       if (ayarlar.iftarAktif) {
         const ramazanTarihleri = getRamazan2026Tarihleri();
-        
+
         // Her Ramazan günü için bildirim oluştur
         for (let i = 0; i < ramazanTarihleri.length; i++) {
           const ramazanTarihi = ramazanTarihleri[i];
-          
+
           // Bu günün namaz vakitlerini al
           const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
-          
+
           if (gununVakitleri) {
             // Akşam vaktinden 45 dakika önce iftar hatırlatıcısı
             const iftarHatirlaticiSaat = saattenDakikaCikar(gununVakitleri.aksam, 45);
             const [iftarSaat, iftarDakika] = iftarHatirlaticiSaat.split(':').map(Number);
-            
+
             const bildirimTarih = new Date(ramazanTarihi);
             bildirimTarih.setHours(iftarSaat, iftarDakika, 0, 0);
-            
+
             // Eğer tarih geçmişse atla
             if (bildirimTarih < bugun) {
               continue;
             }
-            
+
             await Notifications.scheduleNotificationAsync({
               content: {
                 title: '🌇 İftar Hatırlatıcısı',
@@ -137,7 +137,7 @@ export function useBildirimler() {
               },
             });
           }
-          
+
           // API rate limit için kısa bekleme
           if (i < ramazanTarihleri.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -155,9 +155,6 @@ export function useBildirimler() {
         for (let i = 0; i < 30; i++) {
           const bildirimTarih = new Date(hatirlaticiTarih);
           bildirimTarih.setDate(bildirimTarih.getDate() + i);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:100',message:'Günlük hatırlatıcı bildirimi oluşturuluyor',data:{i,bildirimTarih:bildirimTarih.toISOString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
 
           await Notifications.scheduleNotificationAsync({
             content: {
@@ -176,18 +173,18 @@ export function useBildirimler() {
       // Namaz vakitleri bildirimleri - Ramazan 2026 tarihleri için
       if (ayarlar.namazVakitleriAktif) {
         const ramazanTarihleri = getRamazan2026Tarihleri();
-        
+
         // Her Ramazan günü için o günün namaz vakitlerini al
         for (let i = 0; i < ramazanTarihleri.length; i++) {
           const ramazanTarihi = ramazanTarihleri[i];
-          
+
           // Bu günün namaz vakitlerini al
           const gununVakitleri = await getTarihNamazVakitleri(ramazanTarihi, sehirAdi);
-          
+
           if (!gununVakitleri) {
             continue;
           }
-          
+
           const namazVakitleri = [
             { isim: 'Sabah', saat: gununVakitleri.imsak },
             { isim: 'Öğle', saat: gununVakitleri.ogle },
@@ -223,7 +220,7 @@ export function useBildirimler() {
               },
             });
           }
-          
+
           // API rate limit için kısa bekleme
           if (i < ramazanTarihleri.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -241,7 +238,7 @@ export function useBildirimler() {
           for (let i = 0; i < sahurVakitleri.length; i++) {
             const sahurVakti = sahurVakitleri[i];
             const ramazanTarihi = ramazanTarihleri[i];
-            
+
             // Sahur saatini parse et
             const [sahurSaat, sahurDakika] = sahurVakti.sahur.split(':').map(Number);
             const sahurTarih = new Date(ramazanTarihi);
@@ -250,27 +247,27 @@ export function useBildirimler() {
             // Sahur saatinden önce su içme hatırlatıcıları planla
             // Örnek: Sahur 03:30 ise, 02:00, 02:30, 03:00'da hatırlat
             // Sahur saatinden sonra hatırlatma!
-            
+
             // Sahur saatinden 2 saat önce başla (örneğin sahur 03:30 ise, 01:30'dan başla)
             const baslangicTarih = new Date(sahurTarih);
             baslangicTarih.setMinutes(baslangicTarih.getMinutes() - 120); // 2 saat önce
 
             // Şu anki tarih ve saat
             const simdi = new Date();
-            
+
             // Eğer bu Ramazan günü geçmişse (bugün değilse), atla
             const ramazanGunu = new Date(ramazanTarihi);
             ramazanGunu.setHours(0, 0, 0, 0);
             const bugun = new Date(simdi);
             bugun.setHours(0, 0, 0, 0);
-            
+
             if (ramazanGunu < bugun) {
               continue;
             }
 
             // Sahur saatinden önceki her aralık için bildirim oluştur
             let hatirlaticiTarih = new Date(baslangicTarih);
-            
+
             while (hatirlaticiTarih < sahurTarih) {
               // Eğer hatırlatıcı tarihi gelecekteyse, bildirim oluştur
               if (hatirlaticiTarih > simdi) {
@@ -286,23 +283,23 @@ export function useBildirimler() {
                   },
                 });
               }
-              
+
               // Bir sonraki hatırlatıcı zamanı
               hatirlaticiTarih = new Date(hatirlaticiTarih);
               hatirlaticiTarih.setMinutes(hatirlaticiTarih.getMinutes() + suIcmeAraligi);
             }
           }
         } catch (error) {
-          console.error('Sahur su içme hatırlatıcıları ayarlanırken hata:', error);
+          handleError(error, 'useBildirimler.suIcmeHatirlatici');
         }
       }
     } catch (error) {
       // Expo Go'da remote push notifications çalışmaz, bu normal
       // Local notifications çalışmaya devam eder
       if (error instanceof Error && error.message.includes('remote notifications')) {
-        console.log('Not: Expo Go\'da remote push notifications desteklenmiyor. Local notifications kullanılıyor.');
+        logger.info('Expo Go\'da remote push notifications desteklenmiyor. Local notifications kullanılıyor.', undefined, 'useBildirimler');
       } else {
-        console.error('Bildirimler ayarlanırken hata:', error);
+        handleError(error, 'useBildirimler.bildirimleriAyarla');
       }
     }
   }, []);
@@ -310,24 +307,22 @@ export function useBildirimler() {
   const bildirimleriIptalEt = useCallback(async () => {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
+      logger.info('Tüm bildirimler iptal edildi', undefined, 'useBildirimler');
     } catch (error) {
-      console.error('Bildirimler iptal edilirken hata:', error);
+      handleError(error, 'useBildirimler.bildirimleriIptalEt');
     }
   }, []);
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:158',message:'useEffect çalıştı - bildirimleriAyarla dependency arrayde',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    logger.debug('useBildirimler hook başlatıldı', undefined, 'useBildirimler');
+
     bildirimleriAyarla();
-    
+
     // Ezan sesi listener'ını başlat
     bildirimEzanSesiBaslat();
 
     return () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/cc9fe6a4-66fd-4da1-9ddb-eb4d27168ce9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useBildirimler.ts:162',message:'useEffect cleanup çalıştı',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
+      logger.debug('useBildirimler cleanup çalıştırılıyor', undefined, 'useBildirimler');
       // Cleanup - component unmount olduğunda
       bildirimEzanSesiTemizle();
     };

@@ -1,18 +1,56 @@
 import { NamazVakitleri } from '../types';
+import { logger } from './logger';
 
-// Fetch timeout (10 saniye)
-const FETCH_TIMEOUT = 10000;
+// Fetch timeout (15 saniye - mobil bağlantılar için daha uzun)
+const FETCH_TIMEOUT = 15000;
+const MAX_RETRIES = 2; // Maksimum 2 retry
 
 /**
  * Timeout ile fetch yapar
  */
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = FETCH_TIMEOUT): Promise<Response> {
-  return Promise.race([
-    fetch(url, options),
-    new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), timeout)
-    ),
-  ]) as Promise<Response>;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
+  }
+}
+
+/**
+ * Retry mekanizması ile fetch yapar
+ */
+async function fetchWithRetry(url: string, options: RequestInit = {}, retries: number = MAX_RETRIES): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      logger.debug(`API çağrısı (deneme ${i + 1}/${retries + 1})`, { url }, 'namazVakitleri');
+      const response = await fetchWithTimeout(url, options);
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      logger.warn(`API çağrısı başarısız (deneme ${i + 1}/${retries + 1})`, { error: lastError.message }, 'namazVakitleri');
+
+      // Son deneme değilse kısa bir süre bekle
+      if (i < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+      }
+    }
+  }
+
+  throw lastError || new Error('Request failed after retries');
 }
 
 
@@ -26,25 +64,25 @@ async function getAladhanTarihNamazVakitleri(
   try {
     const yil = tarih.getFullYear();
     const ay = tarih.getMonth() + 1;
-    
+
     const apiUrl = `https://api.aladhan.com/v1/calendarByCity?city=${encodeURIComponent(sehirAdi)}&country=Turkey&method=13&year=${yil}&month=${ay}`;
-    
-    const response = await fetchWithTimeout(apiUrl, {
+
+    const response = await fetchWithRetry(apiUrl, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-    }, 8000);
-    
+    });
+
     if (!response.ok) {
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     if (data.data && Array.isArray(data.data)) {
       const hedefTarih = tarih.getDate();
       const hedefAy = tarih.getMonth() + 1;
       const hedefYil = tarih.getFullYear();
-      
+
       const vakit = data.data.find((v: any) => {
         const gregorian = v?.date?.gregorian;
         if (!gregorian) return false;
@@ -56,7 +94,7 @@ async function getAladhanTarihNamazVakitleri(
         }
         return gun === hedefTarih && ayNo === hedefAy && yilNo === hedefYil;
       });
-      
+
       if (vakit && vakit.timings) {
         const timings = vakit.timings;
         const result: NamazVakitleri = {
@@ -67,16 +105,16 @@ async function getAladhanTarihNamazVakitleri(
           aksam: timings.Maghrib?.substring(0, 5) || '',
           yatsi: timings.Isha?.substring(0, 5) || '',
         };
-        
+
         if (result.imsak && result.gunes && result.ogle && result.ikindi && result.aksam && result.yatsi) {
           return result;
         }
       }
     }
-    
+
     return null;
   } catch (error: any) {
-    console.error('[Aladhan Tarih API] Hata:', error?.message || error);
+    logger.error('[Aladhan Tarih API] Hata', error, 'namazVakitleri');
     return null;
   }
 }
@@ -92,7 +130,7 @@ async function getAladhanKoordinatNamazVakitleri(
 ): Promise<NamazVakitleri | null> {
   try {
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      console.error('[Aladhan Koordinat API] Geçersiz koordinatlar:', { lat, lon });
+      logger.error('[Aladhan Koordinat API] Geçersiz koordinatlar', { lat, lon }, 'namazVakitleri');
       return null;
     }
 
@@ -101,13 +139,13 @@ async function getAladhanKoordinatNamazVakitleri(
 
     console.log(`[Aladhan Koordinat API] Vakitler çekiliyor: ${lat}, ${lon}, ts=${timestamp}`);
 
-    const response = await fetchWithTimeout(apiUrl, {
+    const response = await fetchWithRetry(apiUrl, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-    }, 8000);
+    });
 
     if (!response.ok) {
-      console.warn(`[Aladhan Koordinat API] HTTP hatası: ${response.status}`);
+      logger.warn(`[Aladhan Koordinat API] HTTP hatası: ${response.status}`, undefined, 'namazVakitleri');
       return null;
     }
 
@@ -115,7 +153,7 @@ async function getAladhanKoordinatNamazVakitleri(
     const timings = data?.data?.timings;
 
     if (!timings) {
-      console.warn('[Aladhan Koordinat API] Yanıtta timing bulunamadı');
+      logger.warn('[Aladhan Koordinat API] Yanıtta timing bulunamadı', undefined, 'namazVakitleri');
       return null;
     }
 
@@ -133,10 +171,10 @@ async function getAladhanKoordinatNamazVakitleri(
       return result;
     }
 
-    console.warn('[Aladhan Koordinat API] ⚠️ Eksik veri:', result);
+    logger.warn('[Aladhan Koordinat API] ⚠️ Eksik veri', result, 'namazVakitleri');
     return null;
   } catch (error: any) {
-    console.error('[Aladhan Koordinat API] Hata:', error?.message || error);
+    logger.error('[Aladhan Koordinat API] Hata', error, 'namazVakitleri');
     return null;
   }
 }
@@ -152,32 +190,32 @@ async function getAladhanNamazVakitleri(
     const bugun = new Date();
     const yil = bugun.getFullYear();
     const ay = bugun.getMonth() + 1;
-    
+
     // API endpoint: /v1/calendarByCity
     // method=13 = Diyanet İşleri Başkanlığı
     const apiUrl = `https://api.aladhan.com/v1/calendarByCity?city=${encodeURIComponent(sehirAdi)}&country=Turkey&method=13&year=${yil}&month=${ay}`;
-    
+
     console.log(`[Aladhan API] Vakitler çekiliyor: ${sehirAdi}`);
-    
-    const response = await fetchWithTimeout(apiUrl, {
+
+    const response = await fetchWithRetry(apiUrl, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-    }, 8000);
-    
+    });
+
     if (!response.ok) {
-      console.warn(`[Aladhan API] HTTP hatası: ${response.status}`);
+      logger.warn(`[Aladhan API] HTTP hatası: ${response.status}`, undefined, 'namazVakitleri');
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     // Aladhan API formatı: { data: [...] }
     if (data.data && Array.isArray(data.data)) {
       // Bugünün tarihini bul
       const bugunTarih = bugun.getDate();
       const bugunAy = bugun.getMonth() + 1;
       const bugunYil = bugun.getFullYear();
-      
+
       const bugununVakti = data.data.find((v: any) => {
         const gregorian = v?.date?.gregorian;
         if (!gregorian) return false;
@@ -189,10 +227,10 @@ async function getAladhanNamazVakitleri(
         }
         return gun === bugunTarih && ayNo === bugunAy && yilNo === bugunYil;
       });
-      
+
       if (bugununVakti && bugununVakti.timings) {
         const timings = bugununVakti.timings;
-        
+
         const result: NamazVakitleri = {
           imsak: timings.Fajr?.substring(0, 5) || timings.Imsak?.substring(0, 5) || '',
           gunes: timings.Sunrise?.substring(0, 5) || '',
@@ -201,7 +239,7 @@ async function getAladhanNamazVakitleri(
           aksam: timings.Maghrib?.substring(0, 5) || '',
           yatsi: timings.Isha?.substring(0, 5) || '',
         };
-        
+
         if (result.imsak && result.gunes && result.ogle && result.ikindi && result.aksam && result.yatsi) {
           console.log(`[Aladhan API] ✅ Başarılı!`, result);
           return result;
@@ -210,10 +248,10 @@ async function getAladhanNamazVakitleri(
         }
       }
     }
-    
+
     return null;
   } catch (error: any) {
-    console.error('[Aladhan API] Hata:', error?.message || error);
+    logger.error('[Aladhan API] Hata', error, 'namazVakitleri');
     return null;
   }
 }
@@ -240,11 +278,10 @@ export async function getNamazVakitleri(sehirAdi: string): Promise<NamazVakitler
     }
 
     // API başarısız oldu
-    console.error('[Namaz Vakitleri] ❌ Aladhan API başarısız oldu');
-    console.error('[Namaz Vakitleri] Lütfen internet bağlantınızı kontrol edin');
+    logger.error('[Namaz Vakitleri] Aladhan API başarısız oldu. Lütfen internet bağlantınızı kontrol edin', undefined, 'namazVakitleri');
     return null;
   } catch (error) {
-    console.error('[Namaz Vakitleri] Genel hata:', error);
+    logger.error('[Namaz Vakitleri] Genel hata', error, 'namazVakitleri');
     return null;
   }
 }
@@ -279,7 +316,7 @@ export async function getTarihNamazVakitleri(
 
     return null;
   } catch (error) {
-    console.error('[Tarih Namaz Vakitleri] Genel hata:', error);
+    logger.error('[Tarih Namaz Vakitleri] Genel hata', error, 'namazVakitleri');
     return null;
   }
 }
@@ -295,25 +332,25 @@ export function saattenDakikaCikar(saat: string, dakika: number): string {
     const [saatStr, dakikaStr] = saat.split(':');
     let saatNum = parseInt(saatStr, 10);
     let dakikaNum = parseInt(dakikaStr, 10);
-    
+
     // Dakikayı çıkar
     dakikaNum -= dakika;
-    
+
     // Negatif dakika durumunda saati azalt
     while (dakikaNum < 0) {
       dakikaNum += 60;
       saatNum -= 1;
     }
-    
+
     // Negatif saat durumunda günü azalt (00:00'a dön)
     if (saatNum < 0) {
       saatNum = 23;
       dakikaNum = 60 + dakikaNum;
     }
-    
+
     return `${String(saatNum).padStart(2, '0')}:${String(dakikaNum).padStart(2, '0')}`;
   } catch (error) {
-    console.error('Saat hesaplama hatası:', error);
+    logger.error('Saat hesaplama hatası', error, 'namazVakitleri');
     return saat;
   }
 }
@@ -328,13 +365,13 @@ export function saatFarkiHesapla(saat1: string, saat2: string): number {
   try {
     const [saat1Str, dakika1Str] = saat1.split(':');
     const [saat2Str, dakika2Str] = saat2.split(':');
-    
+
     const dakika1 = parseInt(saat1Str, 10) * 60 + parseInt(dakika1Str, 10);
     const dakika2 = parseInt(saat2Str, 10) * 60 + parseInt(dakika2Str, 10);
-    
+
     return dakika2 - dakika1;
   } catch (error) {
-    console.error('Saat farkı hesaplama hatası:', error);
+    logger.error('Saat farkı hesaplama hatası', error, 'namazVakitleri');
     return 0;
   }
 }
@@ -348,7 +385,7 @@ export function saniyeToZaman(saniye: number): { saat: number; dakika: number; s
   const saat = Math.floor(saniye / 3600);
   const dakika = Math.floor((saniye % 3600) / 60);
   const saniyeKalan = saniye % 60;
-  
+
   return { saat, dakika, saniye: saniyeKalan };
 }
 

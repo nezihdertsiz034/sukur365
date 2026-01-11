@@ -18,6 +18,7 @@ import AraclarScreen from '../screens/AraclarScreen';
 import AyarlarScreen from '../screens/AyarlarScreen';
 import NotlarScreen from '../screens/NotlarScreen';
 import WidgetScreen from '../screens/WidgetScreen';
+import QuranScreen from '../screens/QuranScreen';
 
 // Ekstra ekranlar
 import ZekatScreen from '../screens/ekstra/ZekatScreen';
@@ -104,6 +105,11 @@ function IbadetStack() {
                 name="DualarMain"
                 component={DualarScreen}
                 options={{ title: '🤲 Dualar' }}
+            />
+            <Stack.Screen
+                name="KuranKerim"
+                component={QuranScreen}
+                options={{ title: '📖 Kur\'an-ı Kerim', headerShown: false }}
             />
             <Stack.Screen
                 name="KuranAyetleri"

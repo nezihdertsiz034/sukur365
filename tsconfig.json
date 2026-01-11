@@ -2,6 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "jsx": "react-native",
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -12,7 +15,9 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "isolatedModules": true,
-    "customConditions": ["react-native"]
+    "customConditions": [
+      "react-native"
+    ]
   },
   "include": [
     "**/*.ts",

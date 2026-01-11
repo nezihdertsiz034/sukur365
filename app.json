@@ -6,6 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/android-chrome-512x512.png",
     "userInterfaceStyle": "automatic",
+    "description": "2026 Ramazan ayı için oruç takibi ve dini rehber uygulaması. Namaz vakitleri, Kur'an-ı Kerim, dualar, tesbih sayacı ve daha fazlası.",
+    "primaryColor": "#1a5f3f",
     "splash": {
       "image": "./assets/android-chrome-512x512.png",
       "resizeMode": "contain",
@@ -17,11 +19,16 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/android-chrome-512x512.png",
-      "bundleIdentifier": "com.anonymous.oruczinciri",
+      "bundleIdentifier": "com.nezihdertsiz.oruczinciri",
+      "buildNumber": "1",
       "splash": {
         "image": "./assets/android-chrome-512x512.png",
         "resizeMode": "contain",
         "backgroundColor": "#1a5f3f"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Uygulama konum bilginizi kıble yönünü hesaplamak ve namaz vakitlerini belirlemek için kullanır.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Uygulama konum bilginizi kıble yönünü hesaplamak için kullanır."
       }
     },
     "android": {
@@ -35,12 +42,14 @@
         "resizeMode": "contain",
         "backgroundColor": "#1a5f3f"
       },
-      "package": "com.anonymous.oruczinciri",
+      "package": "com.nezihdertsiz.oruczinciri",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -64,6 +73,11 @@
         }
       ]
     ],
-    "scheme": "oruc-zinciri"
+    "scheme": "oruc-zinciri",
+    "extra": {
+      "eas": {
+        "projectId": "WILL_BE_GENERATED"
+      }
+    }
   }
 }

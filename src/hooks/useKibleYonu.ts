@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { KibleYonu } from '../types';
+import { logger } from '../utils/logger';
+import { handleError } from '../utils/errorHandler';
 
 /**
- * Kıble yönünü hesaplayan hook
- * Mekke'nin koordinatları: 21.4225° N, 39.8262° E
+ * Kıble yönünü hesaplayan ve yöneten hook
+ * 
+ * @returns {Object} Kıble yönü, yükleniyor durumu ve hata mesajı
  */
 export function useKibleYonu() {
   const [kibleYonu, setKibleYonu] = useState<KibleYonu | null>(null);
@@ -12,7 +15,7 @@ export function useKibleYonu() {
   const [hata, setHata] = useState<string | null>(null);
 
   useEffect(() => {
-    async function kibleHesapla() {
+    async function hesaplaKibleYonu() {
       try {
         setYukleniyor(true);
         setHata(null);
@@ -20,59 +23,48 @@ export function useKibleYonu() {
         // Konum izni iste
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          throw new Error('Konum izni verilmedi');
+          setHata('Konum izni verilmedi. Lütfen ayarlardan izin verin.');
+          logger.warn('Konum izni verilmedi', undefined, 'useKibleYonu');
+          return;
         }
 
         // Mevcut konumu al
-        const konum = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-        const { latitude, longitude } = konum.coords;
+        const location = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = location.coords;
 
-        // Kabe koordinatları
-        const kabeLat = 21.4225;
-        const kabeLon = 39.8262;
+        // Kabe'nin koordinatları
+        const kabeLatitude = 21.4225;
+        const kabeLongitude = 39.8262;
 
-        // Derece -> Radyan dönüşümü
-        const toRad = (deg: number) => (deg * Math.PI) / 180;
-        const toDeg = (rad: number) => (rad * 180) / Math.PI;
+        // Kıble açısını hesapla
+        const lat1 = (latitude * Math.PI) / 180;
+        const lat2 = (kabeLatitude * Math.PI) / 180;
+        const dLon = ((kabeLongitude - longitude) * Math.PI) / 180;
 
-        // Kullanıcı ve Kabe koordinatlarını radyana çevir
-        const lat1 = toRad(latitude);
-        const lon1 = toRad(longitude);
-        const lat2 = toRad(kabeLat);
-        const lon2 = toRad(kabeLon);
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x =
+          Math.cos(lat1) * Math.sin(lat2) -
+          Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
 
-        // Doğru Qibla bearing formülü
-        // bearing = atan2(sin(Δλ), cos(φ1)·tan(φ2) − sin(φ1)·cos(Δλ))
-        const dLon = lon2 - lon1;
+        let aci = (Math.atan2(y, x) * 180) / Math.PI;
+        aci = (aci + 360) % 360; // 0-360 arası normalize et
 
-        const x = Math.sin(dLon);
-        const y = Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(dLon);
+        // Yön belirle
+        const yonlar: Array<KibleYonu['yon']> = ['K', 'KB', 'B', 'GB', 'G', 'GD', 'D', 'KD'];
+        const yonIndex = Math.round(aci / 45) % 8;
+        const yon = yonlar[yonIndex];
 
-        let aci = toDeg(Math.atan2(x, y));
-
-        // Açıyı 0-360 aralığına normalize et
-        if (aci < 0) aci += 360;
-
-        console.log(`[Kıble] Konum: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        console.log(`[Kıble] Hesaplanan açı: ${aci.toFixed(2)}°`);
-
-        // Yön belirleme
-        let yon: KibleYonu['yon'] = 'G';
-        if (aci >= 337.5 || aci < 22.5) yon = 'K';
-        else if (aci >= 22.5 && aci < 67.5) yon = 'KD';
-        else if (aci >= 67.5 && aci < 112.5) yon = 'D';
-        else if (aci >= 112.5 && aci < 157.5) yon = 'GD';
-        else if (aci >= 157.5 && aci < 202.5) yon = 'G';
-        else if (aci >= 202.5 && aci < 247.5) yon = 'GB';
-        else if (aci >= 247.5 && aci < 292.5) yon = 'B';
-        else if (aci >= 292.5 && aci < 337.5) yon = 'KB';
+        logger.debug('Kıble yönü hesaplandı', {
+          latitude: latitude.toFixed(4),
+          longitude: longitude.toFixed(4),
+          aci: aci.toFixed(2),
+          yon
+        }, 'useKibleYonu');
 
         setKibleYonu({ aci, yon });
       } catch (err) {
-        setHata(err instanceof Error ? err.message : 'Kıble yönü hesaplanamadı');
-        console.error('Kıble yönü hesaplanırken hata:', err);
+        const appError = handleError(err, 'useKibleYonu.hesaplaKibleYonu');
+        setHata(appError.userMessage);
         // Varsayılan değer (Türkiye için yaklaşık - İstanbul bazlı)
         setKibleYonu({ aci: 152, yon: 'GD' });
       } finally {
@@ -80,14 +72,8 @@ export function useKibleYonu() {
       }
     }
 
-    kibleHesapla();
+    hesaplaKibleYonu();
   }, []);
 
   return { kibleYonu, yukleniyor, hata };
 }
-
-
-
-
-
-

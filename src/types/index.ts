@@ -121,3 +121,7 @@ export interface KibleYonu {
   aci: number; // 0-360 derece
   yon: 'K' | 'KB' | 'B' | 'GB' | 'G' | 'GD' | 'D' | 'KD';
 }
+
+// Kur'an tipleri
+export * from './quran';
+
