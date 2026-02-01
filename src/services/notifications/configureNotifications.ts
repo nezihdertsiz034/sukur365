@@ -69,7 +69,7 @@ export async function configureNotifications(): Promise<void> {
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000],
       lightColor: '#1a5f3f',
-      sound: 'yunus_emre', // 'ney'den 'yunus_emre'ye değiştirildi
+      sound: 'yunus_emre', // Hatırlatıcılar için Yunus Emre sesi
       enableVibrate: true,
       showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
