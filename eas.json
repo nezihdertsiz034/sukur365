@@ -28,7 +28,8 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "autoIncrement": true
+        "autoIncrement": true,
+        "image": "latest"
       }
     }
   },
