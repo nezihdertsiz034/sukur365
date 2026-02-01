@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
 import { useOrucZinciri } from '../hooks/useOrucZinciri';
@@ -81,7 +82,18 @@ export const RamazanTakvimi: React.FC<RamazanTakvimiProps> = ({ onGunSec }) => {
                     <View style={styles.calendarIcon}>
                         <Text style={styles.headerEmoji}>📅</Text>
                     </View>
-                    <Text style={styles.headerTitle}>{ayBilgileri.ayIsmi} {ayBilgileri.yil}</Text>
+                    <View style={styles.titleSection}>
+                        <View style={styles.monthNav}>
+                            <TouchableOpacity onPress={handlePreviousMonth} style={styles.navButton}>
+                                <Ionicons name="chevron-back" size={20} color={ISLAMI_RENKLER.altinAcik} />
+                            </TouchableOpacity>
+                            <Text style={styles.headerTitle}>{ayBilgileri.ayIsmi}</Text>
+                            <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
+                                <Ionicons name="chevron-forward" size={20} color={ISLAMI_RENKLER.altinAcik} />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.yearSubTitle}>{ayBilgileri.yil}</Text>
+                    </View>
                 </View>
                 <View style={styles.headerRight}>
                     <Text style={styles.orucSayisi}>{toplamIsaretli}/{ayBilgileri.toplamGun}</Text>
@@ -179,10 +191,32 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
+        fontSize: 17,
+        fontWeight: '800',
         color: ISLAMI_RENKLER.yaziBeyaz,
         fontFamily: TYPOGRAPHY.display,
+        minWidth: 80,
+        textAlign: 'center',
+    },
+    titleSection: {
+        justifyContent: 'center',
+    },
+    monthNav: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    navButton: {
+        padding: 5,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+    },
+    yearSubTitle: {
+        fontSize: 10,
+        color: ISLAMI_RENKLER.yaziBeyazYumusak,
+        marginTop: -2,
+        opacity: 0.6,
+        textAlign: 'center',
+        fontWeight: '700',
     },
     headerRight: {
         alignItems: 'flex-end',
