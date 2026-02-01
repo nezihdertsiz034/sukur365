@@ -1,5 +1,6 @@
 import { NamazVakitleri } from '../types';
 import { logger } from './logger';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Fetch timeout (15 saniye - mobil bağlantılar için daha uzun)
 const FETCH_TIMEOUT = 15000;
@@ -280,6 +281,14 @@ async function getAladhanNamazVakitleri(
  * @param sehirAdi - Şehir adı (örn: "İstanbul", "Ankara")
  * @returns Promise<NamazVakitleri | null> - Namaz vakitleri veya null
  */
+const VAKIT_CACHE_KEY = '@vakit_cache';
+
+/**
+ * Namaz vakitlerini çeker
+ * Kaynak: Aladhan API + Yerel Önbellek
+ * @param sehirAdi - Şehir adı (örn: "İstanbul", "Ankara")
+ * @returns Promise<NamazVakitleri | null> - Namaz vakitleri veya null
+ */
 export async function getNamazVakitleri(sehirAdi: string): Promise<NamazVakitleri | null> {
   try {
     if (!sehirAdi || !sehirAdi.trim()) {
@@ -287,16 +296,23 @@ export async function getNamazVakitleri(sehirAdi: string): Promise<NamazVakitler
       return null;
     }
 
-    console.log(`[Namaz Vakitleri] Şehir: ${sehirAdi}`);
-
-    // Öncelik 1: Aladhan API (Method 13 = Diyanet hesaplama yöntemi, en güvenilir)
+    // 1. Önce API'den dene
     const aladhanVakitler = await getAladhanNamazVakitleri(sehirAdi);
     if (aladhanVakitler) {
+      // Başarılıysa önbelleğe kaydet
+      await AsyncStorage.setItem(`${VAKIT_CACHE_KEY}_${sehirAdi}`, JSON.stringify(aladhanVakitler));
       return aladhanVakitler;
     }
 
-    // API başarısız oldu
-    logger.error('[Namaz Vakitleri] Aladhan API başarısız oldu. Lütfen internet bağlantınızı kontrol edin', undefined, 'namazVakitleri');
+    // 2. API başarısızsa (Offline mod), Önbellekten dene
+    logger.warn('[Namaz Vakitleri] API başarısız, önbellekten okunuyor...', { sehirAdi }, 'namazVakitleri');
+    const cacheStr = await AsyncStorage.getItem(`${VAKIT_CACHE_KEY}_${sehirAdi}`);
+    if (cacheStr) {
+      const cached = JSON.parse(cacheStr);
+      logger.info('[Namaz Vakitleri] ✅ Çevrimdışı mod: Önbellekteki vakitler yükleniyor.', undefined, 'namazVakitleri');
+      return cached;
+    }
+
     return null;
   } catch (error) {
     logger.error('[Namaz Vakitleri] Genel hata', error, 'namazVakitleri');
