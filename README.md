@@ -9,9 +9,10 @@ Namaz vakitleri, Kur'an-ı Kerim, oruç takibi, dualar, tesbih sayacı ve daha f
 ### 🏠 Ana Sayfa
 - **⏱️ Oruç Sayacı** - İftara/Sahura kalan süre (Saat:Dakika:Saniye), dairesel ilerleme göstergesi
 - **🕌 Sonraki Namaz Sayacı** - 6 vakit gösterimi, sonraki namaza geri sayım
-- **📅 Ramazan Takvimi** - 30 günlük kompakt grid, oruç tutulan günleri işaretleme
-- **🔗 Oruç Zinciri** - 30 günlük görsel zincir, günlük işaretleme
-- **📖 Günün Ayeti** - Günlük ayet gösterimi
+- **📅 Ramazan Takvimi** - 12 ay dinamik destek, ay navigasyonu (`<` `>`), Ramazan ve Bayram günlerine özel vurgu
+- **🔗 Oruç Zinciri** - 30 günlük görsel zincir, günlük işaretleme ve ✅ ikonu
+- **📖 Günün Ayeti & Mood Tracker** - Ruh haline göre dinamik ayet ve dua önerisi
+- **📝 Akıllı Notlar** - İftar, Sahur gibi hazır şablonlarla hızlı not ekleme
 - **📿 Günün Hadisi** - Günlük hadis gösterimi
 - **⚡ Hızlı Erişim** - Tesbih, Kıble, Dualar, Notlar ve daha fazlası
 
@@ -124,10 +125,11 @@ Namaz vakitleri, Kur'an-ı Kerim, oruç takibi, dualar, tesbih sayacı ve daha f
 
 ## 📅 2026 Ramazan
 
-- **Başlangıç:** 18 Şubat 2026
-- **Bitiş:** 19 Mart 2026
-- **Süre:** 30 gün
-- Tüm özellikler 2026 tarihlerine göre optimize edilmiştir
+- **Başlangıç:** 19 Şubat 2026 Perşembe
+- **Bitiş:** 19 Mart 2026 Perşembe (Arife)
+- **Süre:** 29 gün
+- **Bayramlar:** Ramazan Bayramı (20-22 Mart), Kurban Bayramı (27-30 Mayıs) yeşil vurgu ile işaretlenmiştir.
+- Tüm özellikler 2026 tarihlerine göre optimize edilmiştir.
 
 ## 🔔 Bildirim Sistemi Detayları
 
@@ -183,6 +185,6 @@ Bu proje özel bir projedir.
 
 ---
 
-**Versiyon:** 1.1.0  
-**Son Güncelleme:** Ocak 2026  
-**Ramazan:** 2026 (18 Şubat - 19 Mart)
+**Versiyon:** 1.0.4  
+**Son Güncelleme:** Şubat 2026  
+**Ramazan:** 2026 (19 Şubat - 19 Mart)

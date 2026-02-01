@@ -3,7 +3,7 @@
     "name": "Sukur365",
     "slug": "musluman-plus",
     "newArchEnabled": false,
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/android-chrome-512x512.png",
     "userInterfaceStyle": "automatic",
@@ -21,7 +21,7 @@
       "supportsTablet": true,
       "icon": "./assets/android-chrome-512x512.png",
       "bundleIdentifier": "com.nezihdertsiz.sukur360",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "googleServicesFile": "./GoogleService-Info.plist",
       "splash": {
         "image": "./assets/android-chrome-512x512.png",
@@ -50,7 +50,7 @@
         "backgroundColor": "#1a5f3f"
       },
       "package": "com.nezihdertsiz.sukur360",
-      "versionCode": 7,
+      "versionCode": 8,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
