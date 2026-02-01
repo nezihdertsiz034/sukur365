@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,14 @@ import {
   Switch,
   Animated,
   Easing,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useTheme } from '../hooks/useTheme';
 import { BackgroundDecor } from '../components/BackgroundDecor';
 import { ProgressBar } from '../components/ProgressBar';
 import {
@@ -137,10 +139,13 @@ export default function TesbihScreen() {
     };
   }, []);
 
+  // Dinamik Tema
+  const tema = useTheme();
+
   const sesiYukle = async () => {
     try {
       const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/ney.mp3'),
+        require('../../assets/yunus_emre.mp3'),
         { volume: 0.3 }
       );
       soundRef.current = sound;
@@ -324,7 +329,7 @@ export default function TesbihScreen() {
   const aktifBoncuk = sayac % boncukSayisi;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tema.arkaPlan }]}>
       <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>📿 Tesbih Sayacı</Text>
@@ -342,14 +347,14 @@ export default function TesbihScreen() {
                 key={zikir.id}
                 style={[
                   styles.zikirChip,
-                  seciliZikir.id === zikir.id && styles.zikirChipAktif,
+                  seciliZikir.id === zikir.id && { backgroundColor: tema.vurgu, borderColor: tema.vurgu },
                 ]}
                 onPress={() => setSeciliZikir(zikir)}
               >
                 <Text style={styles.zikirEmoji}>{zikir.emoji}</Text>
                 <Text style={[
                   styles.zikirChipText,
-                  seciliZikir.id === zikir.id && styles.zikirChipTextAktif,
+                  seciliZikir.id === zikir.id && { color: '#000', fontWeight: 'bold' },
                 ]}>
                   {zikir.adi}
                 </Text>
@@ -364,7 +369,7 @@ export default function TesbihScreen() {
           onPress={handleArtir}
           activeOpacity={0.9}
         >
-          <View style={styles.tesbihDaire}>
+          <View style={[styles.tesbihDaire, { borderColor: tema.vurgu, backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)' }]}>
             {/* Boncuklar */}
             {Array.from({ length: boncukSayisi }).map((_, index) => (
               <TesbihBoncugu
@@ -380,7 +385,7 @@ export default function TesbihScreen() {
             {/* Merkez Sayaç */}
             <View style={styles.merkezContainer}>
               <Text style={styles.seciliZikirText}>{seciliZikir.emoji}</Text>
-              <Text style={styles.sayacDeger}>{sayac}</Text>
+              <Text style={[styles.sayacDeger, { color: tema.vurgu }]}>{sayac}</Text>
               <Text style={styles.hedefText}>/ {hedef}</Text>
               <Text style={styles.turText}>
                 {Math.floor(sayac / boncukSayisi)}. tur
@@ -447,11 +452,11 @@ export default function TesbihScreen() {
 
         {/* Kaydet Butonu */}
         <TouchableOpacity
-          style={styles.kaydetButonu}
+          style={[styles.kaydetButonu, { backgroundColor: tema.vurgu }]}
           onPress={handleKaydetVeSifirla}
           activeOpacity={0.85}
         >
-          <Text style={styles.kaydetButonuText}>💾 Kaydet & Sıfırla</Text>
+          <Text style={[styles.kaydetButonuText, { color: '#000' }]}>💾 Kaydet & Sıfırla</Text>
         </TouchableOpacity>
 
         {/* Hedef Ayarları */}
@@ -595,34 +600,48 @@ const styles = StyleSheet.create({
     width: TESBIH_BOYUT,
     height: TESBIH_BOYUT,
     borderRadius: TESBIH_BOYUT / 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderWidth: 3,
+    backgroundColor: '#000000', // Arka plan opaque olmalı
+    borderWidth: 2,
     borderColor: ISLAMI_RENKLER.altinOrta,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: ISLAMI_RENKLER.altinOrta,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: ISLAMI_RENKLER.altinOrta,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   boncuk: {
     position: 'absolute',
     width: 24,
     height: 24,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 4,
+    backgroundColor: ISLAMI_RENKLER.altinOrta,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   merkezContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     width: TESBIH_BOYUT * 0.55,
     height: TESBIH_BOYUT * 0.55,
     borderRadius: TESBIH_BOYUT * 0.275,
@@ -746,11 +765,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-    shadowColor: ISLAMI_RENKLER.yesilParlak,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: ISLAMI_RENKLER.yesilParlak,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
     width: '100%',
   },
   kaydetButonuText: {

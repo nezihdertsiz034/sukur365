@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { KuranAyeti } from '../types';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../hooks/useTheme';
 
 interface KuranAyetiKartProps {
   ayet: KuranAyeti;
@@ -16,10 +18,13 @@ export const KuranAyetiKart: React.FC<KuranAyetiKartProps> = ({
   ayet,
   onFavoriToggle,
 }) => {
+  const { yaziBoyutuCarpani } = useSettings();
+  const tema = useTheme();
+
   const handlePaylas = async () => {
     try {
       const paylasMetni = `${ayet.sure} Suresi, ${ayet.ayetNumarasi}. Ayet\n\n${ayet.arapca}\n\n${ayet.turkceMeal}`;
-      
+
       // Paylaşım için metin olarak paylaş
       await Share.share({
         message: paylasMetni,
@@ -30,11 +35,11 @@ export const KuranAyetiKart: React.FC<KuranAyetiKartProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.glassBackground }]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.sureBaslik}>{ayet.sure} Suresi</Text>
-          <Text style={styles.ayetNumarasi}>{ayet.ayetNumarasi}. Ayet</Text>
+          <Text style={[styles.sureBaslik, { fontSize: 20 * yaziBoyutuCarpani }]}>{ayet.sure} Suresi</Text>
+          <Text style={[styles.ayetNumarasi, { fontSize: 14 * yaziBoyutuCarpani }]}>{ayet.ayetNumarasi}. Ayet</Text>
         </View>
         {onFavoriToggle && (
           <TouchableOpacity onPress={() => onFavoriToggle(ayet.id)}>
@@ -46,16 +51,19 @@ export const KuranAyetiKart: React.FC<KuranAyetiKartProps> = ({
       </View>
 
       <View style={styles.arapcaContainer}>
-        <Text style={styles.arapca}>{ayet.arapca}</Text>
+        <Text style={[styles.arapca, { fontSize: 20 * yaziBoyutuCarpani }]}>{ayet.arapca}</Text>
       </View>
 
       <View style={styles.mealContainer}>
-        <Text style={styles.mealLabel}>Türkçe Meali:</Text>
-        <Text style={styles.meal}>{ayet.turkceMeal}</Text>
+        <Text style={[styles.mealLabel, { fontSize: 14 * yaziBoyutuCarpani }]}>Türkçe Meali:</Text>
+        <Text style={[styles.meal, { fontSize: 16 * yaziBoyutuCarpani, lineHeight: 16 * yaziBoyutuCarpani * 1.6 }]}>{ayet.turkceMeal}</Text>
       </View>
 
-      <TouchableOpacity style={styles.paylasButonu} onPress={handlePaylas}>
-        <Text style={styles.paylasText}>📤 Paylaş</Text>
+      <TouchableOpacity
+        style={[styles.paylasButonu, { backgroundColor: `${tema.vurgu}15`, borderColor: `${tema.vurgu}33` }]}
+        onPress={handlePaylas}
+      >
+        <Text style={[styles.paylasText, { color: tema.vurgu || ISLAMI_RENKLER.yaziBeyaz }]}>📤 Paylaş</Text>
       </TouchableOpacity>
     </View>
   );
@@ -130,9 +138,7 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.body,
   },
   meal: {
-    fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
-    lineHeight: 26,
     textAlign: 'justify',
     fontFamily: TYPOGRAPHY.body,
   },

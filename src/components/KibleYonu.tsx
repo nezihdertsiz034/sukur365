@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Animated, Easing, Dimensions
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle, Line, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { KibleYonu as KibleYonuType } from '../types';
-import { ISLAMI_RENKLER } from '../constants/renkler';
+import { ISLAMI_RENKLER, TEMA_RENKLERI } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
 import { UygulamaAyarlari } from '../types';
 import { yukleUygulamaAyarlari } from '../utils/storage';
@@ -49,6 +49,15 @@ export const KibleYonu: React.FC<KibleYonuProps> = ({
     KD: 'Kuzey-Doğu',
   };
 
+  // Dinamik Tema
+  const tema = React.useMemo(() => {
+    const saat = new Date().getHours();
+    if (saat >= 5 && saat < 11) return TEMA_RENKLERI.SABAH;
+    if (saat >= 11 && saat < 18) return TEMA_RENKLERI.GUN;
+    if (saat >= 18 && saat < 22) return TEMA_RENKLERI.AKSAM;
+    return TEMA_RENKLERI.GECE;
+  }, []);
+
   // Kıble hizalama kontrolü ve titreşim
   useEffect(() => {
     const hizalamaToleransi = 5; // ±5 derece tolerans
@@ -87,7 +96,7 @@ export const KibleYonu: React.FC<KibleYonuProps> = ({
       parlamaAnim.stopAnimation();
       parlamaAnim.setValue(0);
     }
-  }, [kibleOkAcisi, hizalandi, sonTitresimZamani, parlamaAnim]);
+  }, [kibleOkAcisi, hizalandi, sonTitresimZamani, parlamaAnim, uygulamaAyarlari]);
 
   const parlamaOpacity = parlamaAnim.interpolate({
     inputRange: [0, 1],
@@ -132,7 +141,7 @@ export const KibleYonu: React.FC<KibleYonuProps> = ({
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tema.arkaPlan, borderColor: `${tema.vurgu}20` }]}>
       <Text style={styles.baslik}>🕌 Kıble Yönü</Text>
 
       {/* Hizalama durumu */}
@@ -165,79 +174,93 @@ export const KibleYonu: React.FC<KibleYonuProps> = ({
           styles.pusulaWrapper,
           { transform: [{ rotate: `${-pusulaAcisi}deg` }] }
         ]}>
-          <Svg width={PUSULA_BOYUT} height={PUSULA_BOYUT}>
+          <Svg width={PUSULA_BOYUT} height={PUSULA_BOYUT} viewBox={`0 0 ${PUSULA_BOYUT} ${PUSULA_BOYUT}`}>
             <Defs>
-              <LinearGradient id="pusulaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <Stop offset="0%" stopColor="rgba(26, 95, 63, 0.9)" />
-                <Stop offset="100%" stopColor="rgba(10, 50, 30, 0.95)" />
+              <LinearGradient id="altinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <Stop offset="0%" stopColor="#DFBD69" />
+                <Stop offset="50%" stopColor="#926D37" />
+                <Stop offset="100%" stopColor="#DFBD69" />
               </LinearGradient>
-              <LinearGradient id="kibleOkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor={ISLAMI_RENKLER.altinAcik} />
-                <Stop offset="100%" stopColor={ISLAMI_RENKLER.altinOrta} />
+              <LinearGradient id="yesilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor="#1a4731" />
+                <Stop offset="100%" stopColor="#0a2a1b" />
               </LinearGradient>
             </Defs>
 
-            {/* Dış halka */}
-            <Circle
-              cx={merkez}
-              cy={merkez}
-              r={disYaricap}
-              fill="url(#pusulaGradient)"
-              stroke={ISLAMI_RENKLER.altinOrta}
-              strokeWidth={3}
-            />
+            {/* Dış Halka */}
+            <Circle cx={merkez} cy={merkez} r={disYaricap} fill="url(#yesilGrad)" stroke="url(#altinGrad)" strokeWidth="4" />
+            <Circle cx={merkez} cy={merkez} r={disYaricap - 8} fill="transparent" stroke="url(#altinGrad)" strokeWidth="1" strokeDasharray="2,4" />
 
-            {/* Derece işaretleri */}
+            {/* Süslemeler - Arabesque Motif */}
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((aci, i) => (
+              <View key={i} style={{ position: 'absolute', transform: [{ rotate: `${aci}deg` }] }}>
+                {/* SVG içinde transform kullanmak için g elementi daha iyidir ama burada basit tutuyoruz */}
+              </View>
+            ))}
+
+            {/* Derece Çizgileri */}
             {Array.from({ length: 72 }).map((_, i) => {
-              const aci = (i * 5 * Math.PI) / 180;
-              const uzunluk = i % 2 === 0 ? 15 : 8;
-              const x1 = merkez + Math.sin(aci) * (disYaricap - 5);
-              const y1 = merkez - Math.cos(aci) * (disYaricap - 5);
-              const x2 = merkez + Math.sin(aci) * (disYaricap - 5 - uzunluk);
-              const y2 = merkez - Math.cos(aci) * (disYaricap - 5 - uzunluk);
+              const aci = i * 5;
+              const isMain = aci % 90 === 0;
+              const isMid = aci % 45 === 0;
+              const lineLen = isMain ? 15 : (isMid ? 10 : 5);
+              const x1 = merkez + (disYaricap - 10) * Math.cos((aci - 90) * Math.PI / 180);
+              const y1 = merkez + (disYaricap - 10) * Math.sin((aci - 90) * Math.PI / 180);
+              const x2 = merkez + (disYaricap - 10 - lineLen) * Math.cos((aci - 90) * Math.PI / 180);
+              const y2 = merkez + (disYaricap - 10 - lineLen) * Math.sin((aci - 90) * Math.PI / 180);
               return (
-                <Line
-                  key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={i % 18 === 0 ? ISLAMI_RENKLER.altinAcik : 'rgba(255,255,255,0.3)'}
-                  strokeWidth={i % 18 === 0 ? 2 : 1}
-                />
+                <Line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="url(#altinGrad)" strokeWidth={isMain ? 2 : 1} opacity={isMain ? 1 : 0.5} />
               );
             })}
 
-            {/* Yön etiketleri */}
-            {yonlar.map((yon) => {
-              const radyan = (yon.aci * Math.PI) / 180;
-              const yazicap = disYaricap - 35;
-              const x = merkez + Math.sin(radyan) * yazicap;
-              const y = merkez - Math.cos(radyan) * yazicap;
+            {/* Yön Harfleri */}
+            {yonlar.map((yon, i) => {
+              const rad = (yon.aci - 90) * Math.PI / 180;
+              const tx = merkez + (disYaricap - 30) * Math.cos(rad);
+              const ty = merkez + (disYaricap - 30) * Math.sin(rad);
               return (
                 <SvgText
-                  key={yon.label}
-                  x={x}
-                  y={y + 5}
-                  fontSize={yon.label.length === 1 ? 18 : 12}
-                  fontWeight="bold"
+                  key={i}
+                  x={tx}
+                  y={ty}
                   fill={yon.renk}
+                  fontSize={yon.aci % 90 === 0 ? "18" : "12"}
+                  fontWeight="bold"
                   textAnchor="middle"
+                  alignmentBaseline="middle"
                 >
                   {yon.label}
                 </SvgText>
               );
             })}
 
-            {/* İç daire */}
-            <Circle
-              cx={merkez}
-              cy={merkez}
-              r={icYaricap}
-              fill="rgba(0, 0, 0, 0.3)"
-              stroke="rgba(218, 165, 32, 0.4)"
-              strokeWidth={2}
-            />
+            {/* İç Desen */}
+            <Circle cx={merkez} cy={merkez} r={icYaricap} fill="transparent" stroke="url(#altinGrad)" strokeWidth="0.5" opacity="0.3" />
+
+            {/* Qibla / Makkah Yazıları */}
+            <SvgText
+              x={merkez}
+              y={merkez - 60}
+              fill="#DFBD69"
+              fontSize="14"
+              fontWeight="bold"
+              textAnchor="middle"
+              letterSpacing="2"
+            >
+              QIBLA
+            </SvgText>
+            <SvgText
+              x={merkez}
+              y={merkez + 70}
+              fill="#DFBD69"
+              fontSize="12"
+              fontWeight="normal"
+              textAnchor="middle"
+              letterSpacing="3"
+              opacity="0.8"
+            >
+              MAKKAH
+            </SvgText>
           </Svg>
         </View>
 
@@ -247,33 +270,57 @@ export const KibleYonu: React.FC<KibleYonuProps> = ({
           { transform: [{ rotate: `${kibleOkAcisi}deg` }] }
         ]}>
           <View style={[styles.kibleOk, hizalandi && styles.kibleOkHizali]}>
-            <View style={styles.okUcu} />
-          </View>
-          <View style={styles.kabeIconContainer}>
-            <Text style={styles.kabeIcon}>🕋</Text>
+            {/* Yeni Modern Kabe Ikonu - Saf Emoji veya SVG kullanılabilir */}
+            <View style={{ width: 60, height: 60, backgroundColor: '#000', borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#DFBD69' }}>
+              <View style={{ width: '100%', height: 4, backgroundColor: '#DFBD69', marginTop: 15 }} />
+              <Text style={{ fontSize: 30 }}>🕋</Text>
+            </View>
           </View>
         </View>
 
-        {/* Merkez nokta */}
-        <View style={styles.merkezNokta} />
+        {/* Merkez İbre (Pusula İğnesi) */}
+        <View style={styles.ibreContainer}>
+          <Svg width={40} height={PUSULA_BOYUT * 0.7} viewBox="0 0 40 200">
+            <Defs>
+              <LinearGradient id="kirmiziGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#ef4444" />
+                <Stop offset="100%" stopColor="#991b1b" />
+              </LinearGradient>
+              <LinearGradient id="gumusGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#e5e7eb" />
+                <Stop offset="100%" stopColor="#9ca3af" />
+              </LinearGradient>
+            </Defs>
+            {/* Kuzey Ucu (Kırmızı) */}
+            <Line x1="20" y1="100" x2="20" y2="10" stroke="url(#kirmiziGrad)" strokeWidth="4" strokeLinecap="round" />
+            <SvgText x="20" y="40" fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="middle">N</SvgText>
+
+            {/* Güney Ucu (Gümüş) */}
+            <Line x1="20" y1="100" x2="20" y2="190" stroke="url(#gumusGrad)" strokeWidth="4" strokeLinecap="round" />
+
+            {/* Orta Göbek */}
+            <Circle cx="20" cy="100" r="8" fill="url(#altinGrad)" stroke="#926D37" strokeWidth="2" />
+            <Circle cx="20" cy="100" r="3" fill="#DFBD69" />
+          </Svg>
+        </View>
       </View>
 
       {/* Bilgi kartı */}
       <View style={styles.bilgiContainer}>
-        <View style={styles.yonKart}>
+        <View style={[styles.yonKart, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(0, 0, 0, 0.25)', borderColor: `${tema.vurgu}30` }]}>
           <Text style={styles.yonLabel}>Kıble Yönü</Text>
-          <Text style={styles.yonText}>{yonIsimleri[kibleYonu.yon]}</Text>
+          <Text style={[styles.yonText, { color: tema.vurgu }]}>{yonIsimleri[kibleYonu.yon]}</Text>
           <Text style={styles.aciText}>{Math.round(kibleYonu.aci)}° Kuzey'den</Text>
         </View>
 
-        <View style={styles.durumKart}>
+        <View style={[styles.durumKart, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(0, 0, 0, 0.25)', borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.durumLabel}>Cihaz Yönü</Text>
           <Text style={styles.durumDeger}>{Math.round(pusulaAcisi)}°</Text>
         </View>
       </View>
 
       {/* Talimatlar */}
-      <View style={styles.talimatKart}>
+      <View style={[styles.talimatKart, { backgroundColor: tema.arkaPlan + 'cc' }]}>
         <Text style={styles.talimatText}>
           📱 Telefonunuzu yere paralel tutun{'\n'}
           🔄 8 şekli çizerek kalibre edin{'\n'}
@@ -350,17 +397,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   kibleOk: {
-    width: 8,
-    height: PUSULA_BOYUT / 2 - 60,
-    backgroundColor: ISLAMI_RENKLER.altinOrta,
-    borderRadius: 4,
-    marginTop: 20,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: ISLAMI_RENKLER.altinAcik,
-    shadowOffset: { width: 0, height: 0 },
+    marginTop: -30,
+  },
+  kabe3D: {
+    width: 70,
+    height: 70,
+    resizeMode: 'contain',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowRadius: 10,
   },
   kibleOkHizali: {
     backgroundColor: '#22c55e',
@@ -387,6 +437,12 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
+  },
+  ibreContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   merkezNokta: {
     position: 'absolute',

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NamazVakitleri } from '../types';
 import { getNamazVakitleri } from '../utils/namazVakitleri';
-import { yukleSehir } from '../utils/storage';
+import { useSettings } from '../context/SettingsContext';
+import { senkronizeWidgetVerileri } from '../utils/storage';
 import { logger } from '../utils/logger';
 import { handleError } from '../utils/errorHandler';
 
@@ -11,9 +12,36 @@ import { handleError } from '../utils/errorHandler';
  * @returns {Object} Namaz vakitleri, yükleniyor durumu ve hata mesajı
  */
 export function useNamazVakitleri() {
+  const { sehir } = useSettings();
   const [vakitler, setVakitler] = useState<NamazVakitleri | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [hata, setHata] = useState<string | null>(null);
+
+  const yenile = async () => {
+    logger.info('Namaz vakitleri manuel olarak yenileniyor...', undefined, 'useNamazVakitleri');
+
+    try {
+      setYukleniyor(true);
+      setHata(null);
+
+      const sehirAdi = sehir?.isim || 'İstanbul';
+      logger.debug('Manual yenileme için şehir', { sehir: sehirAdi }, 'useNamazVakitleri');
+
+      const vakitlerData = await getNamazVakitleri(sehirAdi);
+      setVakitler(vakitlerData);
+
+      if (vakitlerData) {
+        await senkronizeWidgetVerileri(sehirAdi, vakitlerData);
+      }
+
+      logger.info('Manuel yenileme başarılı', { sehir: sehirAdi }, 'useNamazVakitleri');
+    } catch (err) {
+      const appError = handleError(err, 'useNamazVakitleri.yenile');
+      setHata(appError.userMessage);
+    } finally {
+      setYukleniyor(false);
+    }
+  };
 
   useEffect(() => {
     logger.debug('useNamazVakitleri hook başlatıldı', undefined, 'useNamazVakitleri');
@@ -25,17 +53,19 @@ export function useNamazVakitleri() {
         setYukleniyor(true);
         setHata(null);
 
-        // Şehir bilgisini yükle ve namaz vakitlerini şehre göre çek
-        const sehir = await yukleSehir();
-        const sehirAdi = sehir?.isim || 'Istanbul';
+        const sehirAdi = sehir?.isim || 'İstanbul';
 
-        logger.debug('Şehir bilgisi alındı', { sehir: sehirAdi }, 'useNamazVakitleri');
+        console.log('[useNamazVakitleri] Vakitler çekiliyor. Şehir:', sehirAdi);
+        logger.debug('Namaz vakitleri için şehir bilgisi kullanılıyor', { sehir: sehirAdi }, 'useNamazVakitleri');
 
         const vakitlerData = await getNamazVakitleri(sehirAdi);
+        setVakitler(vakitlerData);
+
+        if (vakitlerData) {
+          await senkronizeWidgetVerileri(sehirAdi, vakitlerData);
+        }
 
         logger.info('Namaz vakitleri başarıyla yüklendi', { sehir: sehirAdi }, 'useNamazVakitleri');
-
-        setVakitler(vakitlerData);
       } catch (err) {
         const appError = handleError(err, 'useNamazVakitleri.yukleVakitler');
         setHata(appError.userMessage);
@@ -71,7 +101,7 @@ export function useNamazVakitleri() {
         clearInterval(intervalId);
       }
     };
-  }, []);
+  }, [sehir?.isim]);
 
-  return { vakitler, yukleniyor, hata };
+  return { vakitler, yukleniyor, hata, yenile };
 }

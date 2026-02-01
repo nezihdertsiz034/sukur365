@@ -12,7 +12,7 @@ export default function KibleScreen(_props: KibleScreenProps) {
   const { kibleYonu, kibleOkAcisi, pusulaAcisi, yukleniyor, hata } = useKibleYonu();
 
   return (
-    <EkstraScreenLayout gosterBaslik={false}>
+    <EkstraScreenLayout gosterBaslik={false} geriDonHedef="AraclarMain">
       <KibleYonuComponent
         kibleYonu={kibleYonu}
         kibleOkAcisi={kibleOkAcisi}

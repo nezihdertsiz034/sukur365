@@ -1,0 +1,16 @@
+# EAS Build Ignore
+node_modules/
+.expo/
+.git/
+android/
+ios/
+dist/
+web-build/
+*.aab
+*.apk
+*.ipa
+*.log
+*.jks
+*.keystore
+.DS_Store
+build_errors.log

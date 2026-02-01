@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { useTheme } from '../hooks/useTheme';
 
 interface RozetProps {
   baslik: string;
@@ -11,8 +12,16 @@ interface RozetProps {
  * Başarı rozeti bileşeni
  */
 export const Rozet: React.FC<RozetProps> = ({ baslik, ikon = '🏆' }) => {
+  const tema = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta,
+        borderColor: tema.vurgu,
+        shadowColor: tema.vurgu
+      }
+    ]}>
       <Text style={styles.ikon}>{ikon}</Text>
       <Text style={styles.baslik}>{baslik}</Text>
     </View>

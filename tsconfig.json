@@ -9,15 +9,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "moduleResolution": "bundler",
-    "module": "esnext",
+    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "isolatedModules": true,
-    "customConditions": [
-      "react-native"
-    ]
+    "isolatedModules": true
   },
   "include": [
     "**/*.ts",

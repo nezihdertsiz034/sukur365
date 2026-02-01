@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { useSettings } from '../context/SettingsContext';
 
 interface YerelSaatProps {
   style?: any;
@@ -11,6 +12,7 @@ interface YerelSaatProps {
  */
 export const YerelSaat: React.FC<YerelSaatProps> = ({ style }) => {
   const [saat, setSaat] = useState(new Date());
+  const { yaziBoyutuCarpani } = useSettings();
 
   useEffect(() => {
     // Her saniye güncelle
@@ -45,8 +47,8 @@ export const YerelSaat: React.FC<YerelSaatProps> = ({ style }) => {
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.saat}>{formatSaat(saat)}</Text>
-      <Text style={styles.tarih}>{formatTarih(saat)}</Text>
+      <Text style={[styles.saat, { fontSize: 32 * yaziBoyutuCarpani }]}>{formatSaat(saat)}</Text>
+      <Text style={[styles.tarih, { fontSize: 16 * yaziBoyutuCarpani }]}>{formatTarih(saat)}</Text>
     </View>
   );
 };
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
     borderColor: ISLAMI_RENKLER.yesilAcik,
   },
   saat: {
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: 'bold',
     color: ISLAMI_RENKLER.yesilKoyu,
     marginBottom: 8,
@@ -73,4 +75,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

@@ -6,8 +6,9 @@ import { Sadaka } from '../../types';
 import { getirToplamSadaka, kaydetSadaka, yukleSadakalar } from '../../utils/storage';
 import { tarihToString } from '../../utils/ramazanTarihleri';
 import { ISLAMI_RENKLER } from '../../constants/renkler';
+import { useTheme } from '../../hooks/useTheme';
 
-interface SadakaScreenProps {}
+interface SadakaScreenProps { }
 
 export default function SadakaScreen(_props: SadakaScreenProps) {
   const [sadakalar, setSadakalar] = useState<Sadaka[]>([]);
@@ -15,6 +16,7 @@ export default function SadakaScreen(_props: SadakaScreenProps) {
   const [sadakaModalVisible, setSadakaModalVisible] = useState(false);
   const [sadakaMiktar, setSadakaMiktar] = useState('');
   const [sadakaAciklama, setSadakaAciklama] = useState('');
+  const tema = useTheme();
 
   useEffect(() => {
     verileriYukle();
@@ -65,35 +67,35 @@ export default function SadakaScreen(_props: SadakaScreenProps) {
 
   return (
     <>
-      <EkstraScreenLayout baslik="💝 Sadaka Takibi">
-        <View style={ekstraStiller.bolum}>
+      <EkstraScreenLayout baslik="💝 Sadaka Kayıtları" geriDonHedef="AraclarMain">
+        <View style={[ekstraStiller.bolum, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20`, borderWidth: 1 }]}>
           <View style={ekstraStiller.bolumHeader}>
-            <Text style={ekstraStiller.bolumBaslik}>Sadaka Kayıtları</Text>
+            <Text style={[ekstraStiller.bolumBaslik, { color: tema.yaziRenk }]}>Sadaka Kayıtları</Text>
             <TouchableOpacity
-              style={ekstraStiller.ekleButonu}
+              style={[ekstraStiller.ekleButonu, { backgroundColor: tema.vurgu }]}
               onPress={() => setSadakaModalVisible(true)}
             >
-              <Text style={ekstraStiller.ekleButonuText}>+</Text>
+              <Text style={[ekstraStiller.ekleButonuText, { color: '#000' }]}>+</Text>
             </TouchableOpacity>
           </View>
-          <View style={ekstraStiller.istatistikKart}>
-            <Text style={ekstraStiller.istatistikDeger}>{toplamSadaka.toFixed(2)} ₺</Text>
-            <Text style={ekstraStiller.istatistikLabel}>Toplam Sadaka</Text>
+          <View style={[ekstraStiller.istatistikKart, { backgroundColor: `${tema.vurgu}10`, borderColor: `${tema.vurgu}33` }]}>
+            <Text style={[ekstraStiller.istatistikDeger, { color: tema.vurgu }]}>{toplamSadaka.toFixed(2)} ₺</Text>
+            <Text style={[ekstraStiller.istatistikLabel, { color: tema.yaziRenkSoluk }]}>Toplam Sadaka</Text>
           </View>
           {sadakalar.length > 0 && (
             <View style={ekstraStiller.listeContainer}>
               {sadakalar.slice(0, 5).map((sadaka) => (
-                <View key={sadaka.id} style={ekstraStiller.listeItem}>
+                <View key={sadaka.id} style={[ekstraStiller.listeItem, { borderBottomColor: `${tema.vurgu}20` }]}>
                   <View>
-                    <Text style={ekstraStiller.listeItemBaslik}>
+                    <Text style={[ekstraStiller.listeItemBaslik, { color: tema.yaziRenk }]}>
                       {sadaka.miktar.toFixed(2)} ₺
                     </Text>
-                    <Text style={ekstraStiller.listeItemTarih}>
+                    <Text style={[ekstraStiller.listeItemTarih, { color: tema.yaziRenkSoluk }]}>
                       {formatTarih(sadaka.tarih)}
                     </Text>
                   </View>
                   {sadaka.aciklama && (
-                    <Text style={ekstraStiller.listeItemAciklama}>{sadaka.aciklama}</Text>
+                    <Text style={[ekstraStiller.listeItemAciklama, { color: tema.yaziRenkSoluk }]}>{sadaka.aciklama}</Text>
                   )}
                 </View>
               ))}

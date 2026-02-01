@@ -6,19 +6,17 @@ import {
     FlatList,
     TextInput,
     TouchableOpacity,
-    Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
 import { BackgroundDecor } from '../components/BackgroundDecor';
 import { ESMAUL_HUSNA, EsmaItem } from '../constants/esmaulHusna';
-
-const { width } = Dimensions.get('window');
+import { useTheme } from '../hooks/useTheme';
 
 export default function EsmaulHusnaScreen() {
     const [aramaMetni, setAramaMetni] = useState('');
     const [seciliEsma, setSeciliEsma] = useState<EsmaItem | null>(null);
+    const tema = useTheme();
 
     const filtrelenmisEsmalar = useMemo(() => {
         if (!aramaMetni.trim()) {
@@ -33,35 +31,39 @@ export default function EsmaulHusnaScreen() {
         );
     }, [aramaMetni]);
 
-    const renderEsmaItem = ({ item, index }: { item: EsmaItem; index: number }) => {
+    const renderEsmaItem = ({ item }: { item: EsmaItem }) => {
         const isSecili = seciliEsma?.id === item.id;
 
         return (
             <TouchableOpacity
-                style={[styles.esmaKart, isSecili && styles.esmaKartSecili]}
+                style={[
+                    styles.esmaKart,
+                    {
+                        backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)',
+                        borderColor: tema.vurgu + '20'
+                    },
+                    isSecili && { borderColor: tema.vurgu, backgroundColor: tema.vurgu + '26' }
+                ]}
                 onPress={() => setSeciliEsma(isSecili ? null : item)}
                 activeOpacity={0.8}
             >
-                {/* Numara badge */}
-                <View style={styles.numaraBadge}>
-                    <Text style={styles.numaraText}>{item.id}</Text>
+                <View style={[styles.numaraBadge, { backgroundColor: tema.vurgu + '20' }]}>
+                    <Text style={[styles.numaraText, { color: tema.vurgu }]}>{item.id}</Text>
                 </View>
 
-                {/* İçerik */}
                 <View style={styles.esmaIcerik}>
-                    <Text style={styles.esmaArapca}>{item.arapca}</Text>
-                    <Text style={styles.esmaOkunus}>{item.okunusu}</Text>
+                    <Text style={[styles.esmaArapca, { color: tema.vurgu }]}>{item.arapca}</Text>
+                    <Text style={[styles.esmaOkunus, { color: tema.yaziRenk }]}>{item.okunusu}</Text>
 
                     {isSecili && (
                         <View style={styles.anlamContainer}>
-                            <View style={styles.anlamAyrac} />
-                            <Text style={styles.esmaAnlam}>{item.anlami}</Text>
+                            <View style={[styles.anlamAyrac, { backgroundColor: tema.vurgu + '33' }]} />
+                            <Text style={[styles.esmaAnlam, { color: tema.yaziRenkSoluk }]}>{item.anlami}</Text>
                         </View>
                     )}
                 </View>
 
-                {/* Açma/Kapama göstergesi */}
-                <Text style={styles.acmaKapama}>{isSecili ? '▲' : '▼'}</Text>
+                <Text style={[styles.acmaKapama, { color: tema.vurgu }]}>{isSecili ? '▲' : '▼'}</Text>
             </TouchableOpacity>
         );
     };
@@ -70,36 +72,36 @@ export default function EsmaulHusnaScreen() {
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
             <BackgroundDecor />
 
-            {/* Başlık */}
             <View style={styles.baslikContainer}>
                 <Text style={styles.baslikEmoji}>☪️</Text>
-                <Text style={styles.baslik}>Esmaül Hüsna</Text>
-                <Text style={styles.altBaslik}>Allah'ın 99 Güzel İsmi</Text>
+                <Text style={[styles.baslik, { color: tema.vurgu }]}>Esmaül Hüsna</Text>
+                <Text style={[styles.altBaslik, { color: tema.yaziRenkSoluk }]}>Allah'ın 99 İsmi</Text>
             </View>
 
-            {/* Arama */}
             <View style={styles.aramaContainer}>
-                <View style={styles.aramaInputWrapper}>
+                <View style={[styles.aramaInputWrapper, {
+                    backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)',
+                    borderColor: tema.vurgu + '33'
+                }]}>
                     <Text style={styles.aramaIcon}>🔍</Text>
                     <TextInput
-                        style={styles.aramaInput}
+                        style={[styles.aramaInput, { color: tema.yaziRenk }]}
                         placeholder="İsim veya anlam ara..."
-                        placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+                        placeholderTextColor={tema.yaziRenkSoluk}
                         value={aramaMetni}
                         onChangeText={setAramaMetni}
                     />
                     {aramaMetni.length > 0 && (
                         <TouchableOpacity onPress={() => setAramaMetni('')}>
-                            <Text style={styles.temizleIcon}>✕</Text>
+                            <Text style={[styles.temizleIcon, { color: tema.yaziRenkSoluk }]}>✕</Text>
                         </TouchableOpacity>
                     )}
                 </View>
-                <Text style={styles.sonucSayisi}>
+                <Text style={[styles.sonucSayisi, { color: tema.yaziRenkSoluk }]}>
                     {filtrelenmisEsmalar.length} isim gösteriliyor
                 </Text>
             </View>
 
-            {/* Liste */}
             <FlatList
                 data={filtrelenmisEsmalar}
                 renderItem={renderEsmaItem}
@@ -109,17 +111,16 @@ export default function EsmaulHusnaScreen() {
                 ListEmptyComponent={
                     <View style={styles.bosContainer}>
                         <Text style={styles.bosEmoji}>🔍</Text>
-                        <Text style={styles.bosText}>Sonuç bulunamadı</Text>
+                        <Text style={[styles.bosText, { color: tema.yaziRenkSoluk }]}>Sonuç bulunamadı</Text>
                     </View>
                 }
             />
 
-            {/* Alt Dua */}
-            <View style={styles.altDuaContainer}>
-                <Text style={styles.altDuaText}>
+            <View style={[styles.altDuaContainer, { backgroundColor: tema.vurgu + '10', borderTopColor: tema.vurgu + '33' }]}>
+                <Text style={[styles.altDuaText, { color: tema.yaziRenk }]}>
                     "En güzel isimler Allah'ındır. O'na o isimlerle dua edin."
                 </Text>
-                <Text style={styles.altDuaKaynak}>— A'raf Suresi, 180</Text>
+                <Text style={[styles.altDuaKaynak, { color: tema.vurgu }]}>— A'raf Suresi, 180</Text>
             </View>
         </SafeAreaView>
     );
@@ -128,7 +129,6 @@ export default function EsmaulHusnaScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
     },
     baslikContainer: {
         alignItems: 'center',
@@ -142,15 +142,13 @@ const styles = StyleSheet.create({
     baslik: {
         fontSize: 26,
         fontWeight: '800',
-        color: ISLAMI_RENKLER.altinAcik,
         fontFamily: TYPOGRAPHY.display,
-        textShadowColor: 'rgba(218, 165, 32, 0.3)',
+        textShadowColor: 'rgba(0, 0, 0, 0.2)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 8,
     },
     altBaslik: {
         fontSize: 14,
-        color: ISLAMI_RENKLER.yaziBeyazYumusak,
         fontFamily: TYPOGRAPHY.body,
         marginTop: 4,
     },
@@ -161,10 +159,8 @@ const styles = StyleSheet.create({
     aramaInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: ISLAMI_RENKLER.glassBackground,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: ISLAMI_RENKLER.glassBorder,
         paddingHorizontal: 14,
         paddingVertical: 12,
     },
@@ -175,17 +171,14 @@ const styles = StyleSheet.create({
     aramaInput: {
         flex: 1,
         fontSize: 15,
-        color: ISLAMI_RENKLER.yaziBeyaz,
         fontFamily: TYPOGRAPHY.body,
     },
     temizleIcon: {
         fontSize: 16,
-        color: ISLAMI_RENKLER.yaziBeyazYumusak,
         padding: 4,
     },
     sonucSayisi: {
         fontSize: 12,
-        color: ISLAMI_RENKLER.yaziBeyazYumusak,
         marginTop: 8,
         textAlign: 'center',
         fontFamily: TYPOGRAPHY.body,
@@ -197,22 +190,15 @@ const styles = StyleSheet.create({
     esmaKart: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        backgroundColor: ISLAMI_RENKLER.arkaPlanYesilOrta,
         borderRadius: 16,
         padding: 16,
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    esmaKartSecili: {
-        borderColor: ISLAMI_RENKLER.altinOrta,
-        backgroundColor: 'rgba(218, 165, 32, 0.1)',
     },
     numaraBadge: {
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: 'rgba(218, 165, 32, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 14,
@@ -220,7 +206,6 @@ const styles = StyleSheet.create({
     numaraText: {
         fontSize: 14,
         fontWeight: '700',
-        color: ISLAMI_RENKLER.altinAcik,
         fontFamily: TYPOGRAPHY.display,
     },
     esmaIcerik: {
@@ -228,14 +213,12 @@ const styles = StyleSheet.create({
     },
     esmaArapca: {
         fontSize: 24,
-        color: ISLAMI_RENKLER.altinAcik,
         marginBottom: 4,
         textAlign: 'left',
     },
     esmaOkunus: {
         fontSize: 16,
         fontWeight: '600',
-        color: ISLAMI_RENKLER.yaziBeyaz,
         fontFamily: TYPOGRAPHY.display,
     },
     anlamContainer: {
@@ -243,19 +226,16 @@ const styles = StyleSheet.create({
     },
     anlamAyrac: {
         height: 1,
-        backgroundColor: 'rgba(218, 165, 32, 0.3)',
         marginBottom: 10,
     },
     esmaAnlam: {
         fontSize: 14,
-        color: ISLAMI_RENKLER.yaziBeyazYumusak,
         fontFamily: TYPOGRAPHY.body,
         lineHeight: 22,
         fontStyle: 'italic',
     },
     acmaKapama: {
         fontSize: 12,
-        color: ISLAMI_RENKLER.altinOrta,
         marginLeft: 8,
     },
     bosContainer: {
@@ -268,19 +248,15 @@ const styles = StyleSheet.create({
     },
     bosText: {
         fontSize: 16,
-        color: ISLAMI_RENKLER.yaziBeyazYumusak,
         fontFamily: TYPOGRAPHY.body,
     },
     altDuaContainer: {
-        backgroundColor: 'rgba(218, 165, 32, 0.1)',
         paddingVertical: 16,
         paddingHorizontal: 20,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(218, 165, 32, 0.2)',
     },
     altDuaText: {
         fontSize: 13,
-        color: ISLAMI_RENKLER.yaziBeyaz,
         textAlign: 'center',
         fontStyle: 'italic',
         fontFamily: TYPOGRAPHY.body,
@@ -288,7 +264,6 @@ const styles = StyleSheet.create({
     },
     altDuaKaynak: {
         fontSize: 11,
-        color: ISLAMI_RENKLER.altinOrta,
         textAlign: 'center',
         marginTop: 6,
         fontFamily: TYPOGRAPHY.body,

@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Not, Sadaka, Teravih, BildirimAyarlari, Sehir, TesbihSayaciVeri, TesbihKaydi, UygulamaAyarlari } from '../types';
-import { tarihToString } from './ramazanTarihleri';
+import { NativeModules, Platform } from 'react-native';
+import { Not, Sadaka, Teravih, BildirimAyarlari, Sehir, TesbihSayaciVeri, TesbihKaydi, UygulamaAyarlari, NamazVakitleri } from '../types';
+import { tarihToString, getRamazan2026Tarihleri } from './ramazanTarihleri';
+import { yukleOrucVerileri } from './orucStorage';
 
 // Storage key'leri
 const STORAGE_KEYS = {
@@ -186,11 +188,7 @@ export async function getirTarihTeravih(tarih: string): Promise<Teravih | null> 
 export async function yukleBildirimAyarlari(): Promise<BildirimAyarlari> {
   try {
     const veri = await AsyncStorage.getItem(STORAGE_KEYS.BILDIRIM_AYARLARI);
-    if (veri) {
-      return JSON.parse(veri);
-    }
-    // Varsayılan ayarlar
-    return {
+    const varsayilanAyarlar: BildirimAyarlari = {
       sahurAktif: true,
       sahurSaat: '04:00',
       iftarAktif: true,
@@ -201,7 +199,14 @@ export async function yukleBildirimAyarlari(): Promise<BildirimAyarlari> {
       suIcmeHatirlaticiAktif: false,
       suIcmeAraligi: 30, // Her 30 dakikada bir
       ezanSesiAktif: true, // Varsayılan olarak açık
+      abdestHatirlaticiAktif: true,
     };
+
+    if (veri) {
+      return { ...varsayilanAyarlar, ...JSON.parse(veri) };
+    }
+    // Varsayılan ayarlar
+    return varsayilanAyarlar;
   } catch (error) {
     console.error('Bildirim ayarları yüklenirken hata:', error);
     return {
@@ -215,6 +220,7 @@ export async function yukleBildirimAyarlari(): Promise<BildirimAyarlari> {
       suIcmeHatirlaticiAktif: false,
       suIcmeAraligi: 30, // Her 30 dakikada bir
       ezanSesiAktif: true, // Varsayılan olarak açık
+      abdestHatirlaticiAktif: true,
     };
   }
 }
@@ -236,6 +242,7 @@ export async function kaydetBildirimAyarlari(ayarlar: BildirimAyarlari): Promise
 const VARSAYILAN_UYGULAMA_AYARLARI: UygulamaAyarlari = {
   // Görünüm
   yaziBoyutu: 'normal',
+  temaTercih: 'otomatik',
   arapcaYaziGoster: true,
   animasyonlarAktif: true,
 
@@ -460,9 +467,7 @@ export async function getirIstatistikler(): Promise<{
   haftalikOruc: number[];
 }> {
   try {
-    const { yukleOrucVerileri } = await import('./orucStorage');
     const orucVerileri = await yukleOrucVerileri();
-    const { getRamazan2026Tarihleri } = await import('./ramazanTarihleri');
     const ramazanTarihleri = getRamazan2026Tarihleri();
 
     const toplamGun = ramazanTarihleri.length;
@@ -519,3 +524,26 @@ export async function getirIstatistikler(): Promise<{
   }
 }
 
+
+// ========== NATIVE SYNC ==========
+
+/**
+ * Namaz vakitlerini ve şehir bilgisini native widget'ların okuyabileceği yere kaydeder
+ */
+export async function senkronizeWidgetVerileri(sehirAdi: string, vakitler: NamazVakitleri): Promise<void> {
+  try {
+    if (Platform.OS === 'android') {
+      const WidgetBridge = NativeModules.WidgetBridge;
+      if (WidgetBridge && WidgetBridge.updateWidgetData) {
+        // İmsak ve Akşam (İftar) vakitlerini gönderiyoruz
+        await WidgetBridge.updateWidgetData(sehirAdi, vakitler.imsak, vakitler.aksam);
+        console.log('[Widget Sync] Android Widget verileri güncellendi');
+      }
+    } else if (Platform.OS === 'ios') {
+      // iOS WidgetKit entegrasyonu için hazırlık
+      console.log('[Widget Sync] iOS için veri hazır (Henüz WidgetKit eklenmedi):', { sehirAdi, vakitler });
+    }
+  } catch (error) {
+    console.error('Widget senkronizasyonu hatası:', error);
+  }
+}

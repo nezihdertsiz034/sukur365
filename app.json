@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Şükür365 – Günlük Manevi Takip",
+    "name": "Sukur365",
     "slug": "musluman-plus",
-    "version": "1.0.1",
+    "newArchEnabled": false,
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/android-chrome-512x512.png",
     "userInterfaceStyle": "automatic",
@@ -19,8 +20,9 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/android-chrome-512x512.png",
-      "bundleIdentifier": "com.nezihdertsiz.muslumanplus",
-      "buildNumber": "2",
+      "bundleIdentifier": "com.nezihdertsiz.sukur360",
+      "buildNumber": "7",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "splash": {
         "image": "./assets/android-chrome-512x512.png",
         "resizeMode": "contain",
@@ -47,8 +49,9 @@
         "resizeMode": "contain",
         "backgroundColor": "#1a5f3f"
       },
-      "package": "com.nezihdertsiz.muslumanplus",
-      "versionCode": 2,
+      "package": "com.nezihdertsiz.sukur360",
+      "versionCode": 7,
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -63,6 +66,7 @@
       "manifest": "./assets/site.webmanifest"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-splash-screen",
       [
         "expo-notifications",
@@ -81,7 +85,22 @@
           "locationAlwaysAndWhenInUsePermission": "Uygulama konum bilginizi kıble yönünü hesaplamak için kullanır."
         }
       ],
-      "expo-asset"
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraGradleArguments": [
+              "-Pandroid.jvmargs=-Xmx4096m"
+            ]
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "expo-audio"
     ],
     "scheme": "musluman-plus",
     "extra": {

@@ -1,10 +1,3 @@
-/**
- * Kur'an-ı Kerim Okuma Ekranı
- * 
- * Kitap formatında baştan sona okuma
- * Opsiyonel sure seçimi ile atlama
- */
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
@@ -16,17 +9,20 @@ import {
     Modal,
     FlatList,
     Share as RNShare,
+    StatusBar,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuran } from '../hooks/useQuran';
 import { QuranReader } from '../components/QuranReader';
 import { QuranBookmark } from '../types/quran';
-import { KURAN_RENKLER } from '../constants/renkler';
+import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
-import { BackgroundDecor } from '../components/BackgroundDecor';
+import { useTheme } from '../hooks/useTheme';
 import { getSurahTurkishName } from '../utils/quranApi';
-import { yukleUygulamaAyarlari, kaydetUygulamaAyarlari } from '../utils/storage';
-import { UygulamaAyarlari } from '../types';
+import { useSettings } from '../context/SettingsContext';
 
 export default function QuranScreen() {
     const {
@@ -47,29 +43,17 @@ export default function QuranScreen() {
     const [showSurahList, setShowSurahList] = useState(false);
     const [currentSurahIndex, setCurrentSurahIndex] = useState(0);
     const [isInitialized, setIsInitialized] = useState(false);
-    const [uygulamaAyarlari, setUygulamaAyarlari] = useState<UygulamaAyarlari | null>(null);
+    const { uygulamaAyarlari, guncelleUygulamaAyarlari } = useSettings();
+    const tema = useTheme();
+
 
     useEffect(() => {
-        const loadSettings = async () => {
-            const settings = await yukleUygulamaAyarlari();
-            setUygulamaAyarlari(settings);
-        };
-        loadSettings();
-    }, []);
-
-    /**
-     * İlk yükleme - kaldığı yerden devam veya Fatiha'dan başla
-     */
-    useEffect(() => {
-        // Sadece bir kez çalışsın
         if (isInitialized || !progress) return;
 
         if (progress.lastReadSurah > 0) {
-            // Kaldığı yerden devam
             loadSurah(progress.lastReadSurah);
             setCurrentSurahIndex(progress.lastReadSurah - 1);
         } else {
-            // Fatiha'dan başla
             loadSurah(1);
             setCurrentSurahIndex(0);
         }
@@ -77,11 +61,8 @@ export default function QuranScreen() {
         setIsInitialized(true);
     }, [progress, isInitialized, loadSurah]);
 
-    /**
-     * Sonraki sureye geç
-     */
     const goToNextSurah = useCallback(() => {
-        if (currentSurahIndex < 113) { // 114 sure var (0-113 index)
+        if (currentSurahIndex < 113) {
             const nextIndex = currentSurahIndex + 1;
             setCurrentSurahIndex(nextIndex);
             loadSurah(nextIndex + 1);
@@ -90,9 +71,6 @@ export default function QuranScreen() {
         }
     }, [currentSurahIndex, loadSurah]);
 
-    /**
-     * Önceki sureye geç
-     */
     const goToPreviousSurah = useCallback(() => {
         if (currentSurahIndex > 0) {
             const prevIndex = currentSurahIndex - 1;
@@ -101,18 +79,12 @@ export default function QuranScreen() {
         }
     }, [currentSurahIndex, loadSurah]);
 
-    /**
-     * Belirli bir sureye atla
-     */
     const goToSurah = useCallback((surahNumber: number) => {
         setCurrentSurahIndex(surahNumber - 1);
         loadSurah(surahNumber);
         setShowSurahList(false);
     }, [loadSurah]);
 
-    /**
-     * Bookmark ekle/çıkar
-     */
     const handleBookmark = useCallback((ayahNumber: number, ayahNumberInSurah: number) => {
         if (!currentSurah) return;
 
@@ -135,9 +107,6 @@ export default function QuranScreen() {
         }
     }, [currentSurah, bookmarks, addBookmark, removeBookmark]);
 
-    /**
-     * Favori ekle/çıkar
-     */
     const handleFavorite = useCallback((ayahNumber: number) => {
         if (favorites.includes(ayahNumber)) {
             removeFavorite(ayahNumber);
@@ -146,9 +115,6 @@ export default function QuranScreen() {
         }
     }, [favorites, addFavorite, removeFavorite]);
 
-    /**
-     * Ayet paylaş
-     */
     const handleShare = useCallback(async (ayahNumber: number) => {
         if (!currentSurah) return;
 
@@ -162,33 +128,23 @@ export default function QuranScreen() {
         const shareText = `${currentSurah.arabic.englishName} Suresi, Ayet ${ayahNumberInSurah}\n\n${arabicText}\n\n${turkishText}\n\n- Şükür365`;
 
         try {
-            await RNShare.share({
-                message: shareText,
-            });
+            await RNShare.share({ message: shareText });
         } catch (error) {
             console.error('Paylaşım hatası:', error);
         }
     }, [currentSurah]);
 
-    /**
-     * Yazı boyutunu hızlıca değiştir
-     */
     const toggleFontSize = useCallback(async () => {
         if (!uygulamaAyarlari) return;
 
-        const sizes: UygulamaAyarlari['yaziBoyutu'][] = ['kucuk', 'normal', 'buyuk', 'cokbuyuk', 'dev', 'yasli'];
+        const sizes: ('kucuk' | 'normal' | 'buyuk' | 'cokbuyuk' | 'dev' | 'yasli')[] = ['kucuk', 'normal', 'buyuk', 'cokbuyuk', 'dev', 'yasli'];
         const currentIndex = sizes.indexOf(uygulamaAyarlari.yaziBoyutu);
         const nextIndex = (currentIndex + 1) % sizes.length;
         const nextSize = sizes[nextIndex];
 
-        const yeniAyarlar = { ...uygulamaAyarlari, yaziBoyutu: nextSize };
-        setUygulamaAyarlari(yeniAyarlar);
-        await kaydetUygulamaAyarlari(yeniAyarlar);
-    }, [uygulamaAyarlari]);
+        await guncelleUygulamaAyarlari({ yaziBoyutu: nextSize });
+    }, [uygulamaAyarlari, guncelleUygulamaAyarlari]);
 
-    /**
-     * Sure listesi modal'ı
-     */
     const renderSurahListModal = () => (
         <Modal
             visible={showSurahList}
@@ -199,9 +155,12 @@ export default function QuranScreen() {
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Sure Seç</Text>
-                        <TouchableOpacity onPress={() => setShowSurahList(false)}>
-                            <Text style={styles.modalClose}>✕</Text>
+                        <Text style={styles.modalTitle}>Sure Seçin</Text>
+                        <TouchableOpacity
+                            onPress={() => setShowSurahList(false)}
+                            style={styles.modalCloseButton}
+                        >
+                            <Ionicons name="close" size={24} color={ISLAMI_RENKLER.yesilKoyu} />
                         </TouchableOpacity>
                     </View>
 
@@ -217,8 +176,14 @@ export default function QuranScreen() {
                                 onPress={() => goToSurah(item.number)}
                             >
                                 <View style={styles.surahItemLeft}>
-                                    <View style={styles.surahNumberBadge}>
-                                        <Text style={styles.surahNumberText}>{item.number}</Text>
+                                    <View style={[
+                                        styles.surahNumberBadge,
+                                        item.number === currentSurahIndex + 1 && styles.surahNumberBadgeActive
+                                    ]}>
+                                        <Text style={[
+                                            styles.surahNumberTextModal,
+                                            item.number === currentSurahIndex + 1 && styles.surahNumberTextActive
+                                        ]}>{item.number}</Text>
                                     </View>
                                     <View>
                                         <Text style={styles.surahItemName}>{getSurahTurkishName(item.englishName)}</Text>
@@ -240,9 +205,9 @@ export default function QuranScreen() {
     if (loading && !currentSurah) {
         return (
             <SafeAreaView style={styles.container}>
-                <BackgroundDecor />
+                <StatusBar barStyle="light-content" />
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={KURAN_RENKLER.sureBaslik} />
+                    <ActivityIndicator size="large" color={ISLAMI_RENKLER.yesilOrta} />
                     <Text style={styles.loadingText}>Kur'an-ı Kerim yükleniyor...</Text>
                 </View>
             </SafeAreaView>
@@ -252,8 +217,8 @@ export default function QuranScreen() {
     if (error) {
         return (
             <SafeAreaView style={styles.container}>
-                <BackgroundDecor />
                 <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={64} color={ISLAMI_RENKLER.yesilOrta} />
                     <Text style={styles.errorText}>❌ {error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={() => loadSurah(currentSurahIndex + 1)}>
                         <Text style={styles.retryButtonText}>Tekrar Dene</Text>
@@ -264,30 +229,35 @@ export default function QuranScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <BackgroundDecor />
+        <SafeAreaView style={[styles.container, { backgroundColor: tema.arkaPlan }]} edges={['top']}>
+            <StatusBar barStyle="light-content" />
 
-            {/* Header */}
-            <View style={styles.header}>
+            {/* Modern Header */}
+            <LinearGradient
+                colors={[tema.ana, tema.ikincil]}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+            >
                 <TouchableOpacity onPress={() => setShowSurahList(true)} style={styles.headerButton}>
-                    <Text style={styles.headerButtonText}>📖 Sureler</Text>
+                    <Ionicons name="list" size={24} color="#FFF" />
                 </TouchableOpacity>
 
-                <Text style={styles.headerTitle}>Kur'an-ı Kerim</Text>
+                <View style={styles.headerTitleContainer}>
+                    <Text style={styles.headerTitle}>Şükür365</Text>
+                    <Text style={styles.headerSubtitle}>Kur'an-ı Kerim</Text>
+                </View>
 
                 <View style={styles.headerRight}>
                     <TouchableOpacity onPress={toggleFontSize} style={styles.fontSizeButton}>
-                        <Text style={styles.fontSizeButtonText}>A+</Text>
+                        <Ionicons name="text" size={20} color="#FFF" />
                     </TouchableOpacity>
-                    <Text style={styles.progressText}>
-                        {currentSurahIndex + 1}/114
-                    </Text>
                 </View>
-            </View>
+            </LinearGradient>
 
             {/* Kur'an Reader */}
             {currentSurah && (
-                <>
+                <View style={{ flex: 1 }}>
                     <QuranReader
                         arabicAyahs={currentSurah.arabic.ayahs}
                         turkishAyahs={currentSurah.turkish.ayahs}
@@ -301,38 +271,43 @@ export default function QuranScreen() {
                         fontSize={uygulamaAyarlari?.yaziBoyutu}
                     />
 
-                    {/* Loading Overlay - Sure değiştirirken */}
+                    {/* Loading Overlay */}
                     {loading && (
                         <View style={styles.loadingOverlay}>
                             <View style={styles.loadingBox}>
-                                <ActivityIndicator size="large" color={KURAN_RENKLER.sureBaslik} />
+                                <ActivityIndicator size="large" color={ISLAMI_RENKLER.yesilOrta} />
                                 <Text style={styles.loadingOverlayText}>Sure yükleniyor...</Text>
                             </View>
                         </View>
                     )}
-                </>
+                </View>
             )}
 
-            {/* Navigation Footer */}
-            <View style={styles.footer}>
+            {/* Modern Navigation Footer */}
+            <View style={[styles.footer, { backgroundColor: tema.arkaPlan, borderTopColor: `${tema.vurgu}33` }]}>
                 <TouchableOpacity
-                    style={[styles.navButton, currentSurahIndex === 0 && styles.navButtonDisabled]}
+                    style={[styles.navButton, { backgroundColor: tema.ana }, currentSurahIndex === 0 && styles.navButtonDisabled]}
                     onPress={goToPreviousSurah}
                     disabled={currentSurahIndex === 0}
                 >
-                    <Text style={styles.navButtonText}>⬅️ Önceki Sure</Text>
+                    <Ionicons name="chevron-back" size={20} color={currentSurahIndex === 0 ? "#999" : "#FFF"} />
+                    <Text style={[styles.navButtonText, currentSurahIndex === 0 && styles.navButtonTextDisabled]}>Önceki</Text>
                 </TouchableOpacity>
 
+                <View style={[styles.surahProgressContainer, { backgroundColor: `${tema.vurgu}15` }]}>
+                    <Text style={[styles.surahProgressText, { color: tema.vurgu }]}>{currentSurahIndex + 1} / 114</Text>
+                </View>
+
                 <TouchableOpacity
-                    style={[styles.navButton, currentSurahIndex === 113 && styles.navButtonDisabled]}
+                    style={[styles.navButton, { backgroundColor: tema.ana }, currentSurahIndex === 113 && styles.navButtonDisabled]}
                     onPress={goToNextSurah}
                     disabled={currentSurahIndex === 113}
                 >
-                    <Text style={styles.navButtonText}>Sonraki Sure ➡️</Text>
+                    <Text style={[styles.navButtonText, currentSurahIndex === 113 && styles.navButtonTextDisabled]}>Sonraki</Text>
+                    <Ionicons name="chevron-forward" size={20} color={currentSurahIndex === 113 ? "#999" : "#FFF"} />
                 </TouchableOpacity>
             </View>
 
-            {/* Sure Listesi Modal */}
             {renderSurahListModal()}
         </SafeAreaView>
     );
@@ -341,7 +316,7 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: KURAN_RENKLER.background,
+        backgroundColor: '#F7F9F7',
     },
     loadingContainer: {
         flex: 1,
@@ -351,7 +326,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: KURAN_RENKLER.turkceMeal,
+        color: ISLAMI_RENKLER.yesilKoyu,
         fontFamily: TYPOGRAPHY.body,
     },
     errorContainer: {
@@ -362,15 +337,15 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 16,
-        color: KURAN_RENKLER.turkceMeal,
+        color: ISLAMI_RENKLER.yesilKoyu,
         textAlign: 'center',
-        marginBottom: 20,
+        marginVertical: 20,
     },
     retryButton: {
-        backgroundColor: KURAN_RENKLER.sureBaslik,
+        backgroundColor: ISLAMI_RENKLER.yesilOrta,
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 25,
     },
     retryButtonText: {
         color: '#FFFFFF',
@@ -382,116 +357,130 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        borderBottomWidth: 1,
-        borderBottomColor: KURAN_RENKLER.border,
+        paddingVertical: 15,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
     },
-    headerButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        backgroundColor: KURAN_RENKLER.sureBaslik,
-        borderRadius: 6,
-    },
-    headerButtonText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
+    headerTitleContainer: {
+        alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: KURAN_RENKLER.sureBaslik,
-        fontFamily: TYPOGRAPHY.body,
+        color: '#FFF',
+        letterSpacing: 0.5,
+    },
+    headerSubtitle: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.8)',
+    },
+    headerButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     headerRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
     },
     fontSizeButton: {
-        padding: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
-    fontSizeButtonText: {
-        color: KURAN_RENKLER.sureBaslik,
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    progressText: {
-        fontSize: 14,
-        color: KURAN_RENKLER.ayetNumarasi,
-        fontWeight: '600',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: KURAN_RENKLER.cardBackground,
+        backgroundColor: '#FFF',
         borderTopWidth: 1,
-        borderTopColor: KURAN_RENKLER.border,
+        borderTopColor: '#EEE',
     },
     navButton: {
-        flex: 1,
-        marginHorizontal: 8,
-        paddingVertical: 12,
-        backgroundColor: KURAN_RENKLER.sureBaslik,
-        borderRadius: 8,
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: ISLAMI_RENKLER.yesilOrta,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        minWidth: 100,
+        justifyContent: 'center',
     },
     navButtonDisabled: {
-        backgroundColor: KURAN_RENKLER.border,
-        opacity: 0.5,
+        backgroundColor: '#F0F0F0',
     },
     navButtonText: {
         color: '#FFFFFF',
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: 'bold',
+        marginHorizontal: 4,
+    },
+    navButtonTextDisabled: {
+        color: '#999',
+    },
+    surahProgressContainer: {
+        backgroundColor: 'rgba(27, 94, 32, 0.05)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+    },
+    surahProgressText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: ISLAMI_RENKLER.yesilKoyu,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: '80%',
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        maxHeight: '85%',
         paddingBottom: 20,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        padding: 25,
         borderBottomWidth: 1,
-        borderBottomColor: KURAN_RENKLER.border,
+        borderBottomColor: '#F0F0F0',
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: KURAN_RENKLER.sureBaslik,
+        color: ISLAMI_RENKLER.yesilKoyu,
     },
-    modalClose: {
-        fontSize: 24,
-        color: KURAN_RENKLER.turkceMeal,
+    modalCloseButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#F8F9F8',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     surahItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingHorizontal: 25,
+        paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: KURAN_RENKLER.border,
+        borderBottomColor: '#F9F9F9',
     },
     surahItemActive: {
-        backgroundColor: KURAN_RENKLER.highlight,
+        backgroundColor: 'rgba(27, 94, 32, 0.05)',
     },
     surahItemLeft: {
         flexDirection: 'row',
@@ -499,61 +488,68 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     surahNumberBadge: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: KURAN_RENKLER.ayetNumarasi,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: '#F0F4F0',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 15,
     },
-    surahNumberText: {
-        color: '#FFFFFF',
-        fontSize: 14,
+    surahNumberBadgeActive: {
+        backgroundColor: ISLAMI_RENKLER.yesilOrta,
+    },
+    surahNumberTextModal: {
+        color: ISLAMI_RENKLER.yesilKoyu,
+        fontSize: 15,
         fontWeight: 'bold',
     },
+    surahNumberTextActive: {
+        color: '#FFF',
+    },
     surahItemName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: KURAN_RENKLER.sureBaslik,
-        marginBottom: 2,
+        fontSize: 17,
+        fontWeight: 'bold',
+        color: ISLAMI_RENKLER.yesilKoyu,
+        marginBottom: 3,
     },
     surahItemInfo: {
         fontSize: 12,
-        color: KURAN_RENKLER.turkceMealAcik,
+        color: '#777',
     },
     surahItemArabic: {
-        fontSize: 18,
-        color: KURAN_RENKLER.arapcaMetin,
+        fontSize: 20,
+        color: ISLAMI_RENKLER.yesilKoyu,
         fontWeight: '600',
     },
     loadingOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
     },
     loadingBox: {
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        padding: 30,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 5,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     loadingOverlayText: {
-        marginTop: 12,
+        marginTop: 15,
         fontSize: 16,
-        color: KURAN_RENKLER.turkceMeal,
-        fontFamily: TYPOGRAPHY.body,
+        color: ISLAMI_RENKLER.yesilKoyu,
         fontWeight: '600',
     },
 });

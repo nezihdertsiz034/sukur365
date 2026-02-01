@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { getHadisByGun, Hadis } from '../constants/hadisler';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 
@@ -29,14 +29,14 @@ export const HadisGosterici: React.FC<HadisGostericiProps> = ({
       <View style={styles.baslikContainer}>
         <Text style={styles.baslik}>📖 {gunNumarasi}. Gün Hadis-i Şerif</Text>
       </View>
-      
+
       <ScrollView style={styles.hadisContainer} showsVerticalScrollIndicator={false}>
         <Text style={styles.hadisMetin}>"{hadis.metin}"</Text>
         {hadis.kaynak && (
           <Text style={styles.hadisKaynak}>— {hadis.kaynak}</Text>
         )}
       </ScrollView>
-      
+
       <View style={styles.altBilgi}>
         <Text style={styles.altBilgiText}>
           🌙 Ramazan ayının {gunNumarasi}. günü
@@ -55,11 +55,17 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     borderWidth: 1,
     borderColor: ISLAMI_RENKLER.glassBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
     overflow: 'hidden',
   },
   baslikContainer: {

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useTheme } from '../hooks/useTheme';
 import { BackgroundDecor } from '../components/BackgroundDecor';
 import useIstatistikler from '../hooks/useIstatistikler';
 import { IstatistikKart } from '../components/IstatistikKart';
@@ -12,6 +13,7 @@ import { PaylasButonu } from '../components/PaylasButonu';
 
 export default function IstatistiklerScreen() {
   const { istatistikler, yukleniyor, hata } = useIstatistikler();
+  const tema = useTheme();
 
   if (yukleniyor) {
     return (
@@ -41,7 +43,7 @@ export default function IstatistiklerScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tema.arkaPlan }]}>
       <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>📊 İstatistikler</Text>
@@ -63,7 +65,7 @@ export default function IstatistiklerScreen() {
         </View>
 
         {/* İlerleme Çubuğu */}
-        <View style={styles.progressContainer}>
+        <View style={[styles.progressContainer, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.progressBaslik}>Genel İlerleme</Text>
           <ProgressBar yuzdelik={istatistikler.yuzdelik} yukseklik={24} />
         </View>
@@ -73,9 +75,9 @@ export default function IstatistiklerScreen() {
           <Text style={styles.sectionBaslik}>Haftalık Oruç Sayıları</Text>
           <View style={styles.haftalikKartlar}>
             {istatistikler.haftalikOruc.map((haftaOruc, index) => (
-              <View key={index} style={styles.haftalikKart}>
+              <View key={index} style={[styles.haftalikKart, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
                 <Text style={styles.haftalikBaslik}>{index + 1}. Hafta</Text>
-                <Text style={styles.haftalikDeger}>{haftaOruc} gün</Text>
+                <Text style={[styles.haftalikDeger, { color: tema.vurgu }]}>{haftaOruc} gün</Text>
               </View>
             ))}
           </View>

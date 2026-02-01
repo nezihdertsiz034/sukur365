@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
+import { useTheme } from '../hooks/useTheme';
 
 interface ProgressBarProps {
   yuzdelik: number;
@@ -16,6 +17,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   yukseklik = 20,
   gosterYuzde = true,
 }) => {
+  const tema = useTheme();
   const clampedYuzde = Math.min(100, Math.max(0, yuzdelik));
   const [gosterilenYuzde, setGosterilenYuzde] = useState(0);
 
@@ -42,6 +44,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             {
               width: `${clampedYuzde}%`,
               height: yukseklik,
+              backgroundColor: tema.vurgu
             },
           ]}
         />

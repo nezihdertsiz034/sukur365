@@ -4,11 +4,13 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import SplashWelcomeScreen from '../screens/SplashWelcomeScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import TabNavigator from './TabNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEYS = {
   SEHIR: '@sehir',
+  ONBOARDING_TAMAMLANDI: '@onboarding_tamamlandi_v1',
 } as const;
 
 /**
@@ -17,6 +19,7 @@ const STORAGE_KEYS = {
 export default function AppNavigator() {
   const [yukleniyor, setYukleniyor] = useState(true);
   const [splashGosterildi, setSplashGosterildi] = useState(false);
+  const [sehirSecildi, setSehirSecildi] = useState(false);
   const [onboardingTamamlandi, setOnboardingTamamlandi] = useState(false);
 
   useEffect(() => {
@@ -25,12 +28,15 @@ export default function AppNavigator() {
 
   const kontrolEtOnboarding = async () => {
     try {
-      // Şehir seçilip seçilmediğini kontrol et
-      const sehirVeri = await AsyncStorage.getItem(STORAGE_KEYS.SEHIR);
-      setOnboardingTamamlandi(!!sehirVeri);
+      // Şehir ve Onboarding durumlarını kontrol et
+      const [sehirVeri, onboardingVeri] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.SEHIR),
+        AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_TAMAMLANDI),
+      ]);
+      setSehirSecildi(!!sehirVeri);
+      setOnboardingTamamlandi(!!onboardingVeri);
     } catch (error) {
       console.error('Onboarding kontrolü hatası:', error);
-      setOnboardingTamamlandi(false);
     } finally {
       setYukleniyor(false);
     }
@@ -40,8 +46,17 @@ export default function AppNavigator() {
     setSplashGosterildi(true);
   };
 
-  const handleOnboardingComplete = () => {
-    setOnboardingTamamlandi(true);
+  const handleOnboardingComplete = async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_TAMAMLANDI, 'true');
+      setOnboardingTamamlandi(true);
+    } catch (error) {
+      console.error('Onboarding kaydetme hatası:', error);
+    }
+  };
+
+  const handleSehirComplete = () => {
+    setSehirSecildi(true);
   };
 
   if (yukleniyor) {
@@ -53,17 +68,27 @@ export default function AppNavigator() {
   }
 
   // Önce Splash Welcome ekranı göster (şehir seçilmemişse)
-  if (!onboardingTamamlandi && !splashGosterildi) {
+  if (!sehirSecildi && !splashGosterildi) {
     return <SplashWelcomeScreen onContinue={handleSplashComplete} />;
+  }
+
+  // Eğer şehir seçilmemişse WelcomeScreen (Şehir seçimi)
+  if (!sehirSecildi) {
+    return (
+      <NavigationContainer>
+        <WelcomeScreen onComplete={handleSehirComplete} />
+      </NavigationContainer>
+    );
+  }
+
+  // Şehir seçilmiş ama onboarding tamamlanmamışsa
+  if (!onboardingTamamlandi) {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
   return (
     <NavigationContainer>
-      {!onboardingTamamlandi ? (
-        <WelcomeScreen onComplete={handleOnboardingComplete} />
-      ) : (
-        <TabNavigator />
-      )}
+      <TabNavigator />
     </NavigationContainer>
   );
 }

@@ -1,68 +1,68 @@
 import { useEffect, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import { Platform, Alert } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 import { yukleBildirimAyarlari, yukleSehir } from '../utils/storage';
-import { getTarihNamazVakitleri } from '../utils/namazVakitleri';
-
-import { bildirimEzanSesiBaslat, bildirimEzanSesiTemizle } from '../utils/ezanSesi';
 import { logger } from '../utils/logger';
-import { getHadisByTarihVeVakit } from '../constants/namazVaktiHadisleri';
-
-// Bildirim kanalı ID'leri
-const CHANNEL_NAMAZ = 'namaz-vakitleri';
-const CHANNEL_HATIRLATICI = 'hatirlaticilar';
-
-// Bildirim handler ayarla
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    priority: Notifications.AndroidNotificationPriority.HIGH,
-  }),
-});
+import { getNamazVakitleri } from '../utils/namazVakitleri';
+import { configureNotifications, CHANNEL_HATIRLATICI } from '../services/notifications/configureNotifications';
+import { supabase } from '../utils/supabaseClient';
 
 /**
- * Android için bildirim kanallarını oluştur
+ * Firebase Mesajlaşma İzni İste ve Token Al
  */
-async function createNotificationChannels() {
-  if (Platform.OS !== 'android') return;
-
+async function setupFirebaseMessaging() {
   try {
-    // Namaz vakitleri kanalı (Yunus Emre sesi ile bildirim)
-    await Notifications.setNotificationChannelAsync(CHANNEL_NAMAZ, {
-      name: 'Namaz Vakitleri',
-      description: 'Günlük namaz vakti bildirimleri',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 500, 500, 500, 500, 500, 500, 500],
-      lightColor: '#1a5f3f',
-      sound: 'yunus_emre.mp3', // Dosya uzantısı ile birlikte
-      enableVibrate: true,
-      showBadge: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
+    // iOS için cihazı uzak mesajlara kaydet
+    if (Platform.OS === 'ios') {
+      await messaging().registerDeviceForRemoteMessages();
+    }
 
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    // Hatırlatıcılar kanalı
-    await Notifications.setNotificationChannelAsync(CHANNEL_HATIRLATICI, {
-      name: 'Hatırlatıcılar',
-      description: 'Sahur, iftar ve diğer hatırlatıcılar',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 500, 500, 500, 500, 500, 500, 500],
-      lightColor: '#1a5f3f',
-      sound: 'ney.mp3',
-      enableVibrate: true,
-      showBadge: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
+    if (enabled) {
+      const token = await messaging().getToken();
+      logger.info('FCM Token alındı:', { token }, 'useBildirimler');
 
-    logger.info('Bildirim kanalları oluşturuldu', undefined, 'useBildirimler');
+      // Supabase'e kaydet
+      await syncUserToSupabase(token);
+    } else {
+      logger.warn('FCM Mesajlaşma izni verilmedi', { authStatus }, 'useBildirimler');
+    }
   } catch (error) {
-    logger.error('Bildirim kanalları oluşturulurken hata', { error }, 'useBildirimler');
+    logger.error('Firebase başlatılırken hata', { error }, 'useBildirimler');
   }
 }
+
+/**
+ * Kullanıcı bilgilerini Supabase'e senkronize et
+ */
+async function syncUserToSupabase(token: string) {
+  try {
+    const sehir = await yukleSehir();
+    const ayarlar = await yukleBildirimAyarlari();
+
+    const { error } = await supabase
+      .from('user_devices')
+      .upsert({
+        fcm_token: token,
+        city_id: sehir?.id || 34,
+        city_name: sehir?.isim || 'İstanbul',
+        notification_settings: ayarlar,
+        last_active: new Date().toISOString()
+      }, { onConflict: 'fcm_token' });
+
+    if (error) throw error;
+    logger.info('Kullanıcı bilgileri Supabase\'e senkronize edildi', undefined, 'useBildirimler');
+  } catch (error) {
+    logger.error('Supabase senkronizasyonu hatası', { error }, 'useBildirimler');
+  }
+}
+
+// Bildirim kanalları artık configureNotifications.ts'de yapılandırılıyor
 
 /**
  * Bildirim izni iste
@@ -111,230 +111,98 @@ async function requestNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Bugün ve yarın için namaz vakti bildirimlerini planla
+ * Namaz vakitlerini ve hatırlatıcıları yerel olarak planla
  */
-async function scheduleNamazNotifications(sehirAdi: string, ayarlar: any) {
-  // Ana ayar kontrolü - namazVakitleriAktif kapalıysa hiçbir namaz bildirimi planlanmaz
-  if (!ayarlar.namazVakitleriAktif) {
-    logger.info('Namaz vakitleri bildirimi kapalı, atlanıyor...', undefined, 'useBildirimler');
-    return;
-  }
+async function planlaYerelBildirimler() {
+  try {
+    const ayarlar = await yukleBildirimAyarlari();
+    const sehir = await yukleSehir();
 
-  const simdi = new Date();
-  const simdiTimestamp = simdi.getTime();
+    // 1. Önce tüm eski planlı bildirimleri temizle (çakışmayı önlemek için)
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    logger.info('Eski yerel bildirimler temizlendi', undefined, 'useBildirimler');
 
-  // Önümüzdeki 7 günü planla
-  const planlanacakGunSayisi = 7;
-
-  logger.info(`${planlanacakGunSayisi} günlük namaz bildirimi planlanıyor...`, { sehirAdi }, 'useBildirimler');
-
-  for (let i = 0; i < planlanacakGunSayisi; i++) {
-    // Her gün için yeni bir tarih oluştur (timezone problemlerini önlemek için)
-    const tarih = new Date();
-    tarih.setDate(tarih.getDate() + i);
-    tarih.setHours(0, 0, 0, 0); // Günün başına sıfırla
-
-    const yil = tarih.getFullYear();
-    const ay = tarih.getMonth();
-    const gun = tarih.getDate();
-    const tarihStr = `${yil}-${String(ay + 1).padStart(2, '0')}-${String(gun).padStart(2, '0')}`;
-
-    const vakitler = await getTarihNamazVakitleri(tarih, sehirAdi);
-
-    if (!vakitler) {
-      logger.warn('Namaz vakitleri alınamadı', { tarih: tarihStr }, 'useBildirimler');
-      continue;
+    // 2. Günlük Hatırlatıcı (Sabit Saat)
+    if (ayarlar.gunlukHatirlaticiAktif) {
+      const [saat, dakika] = ayarlar.gunlukHatirlaticiSaat.split(':').map(Number);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🌙 Günlük Hatırlatıcı',
+          body: 'Bugünkü ibadetlerinizi kaydetmeyi unutmayın.',
+          sound: 'yunus_emre.mp3',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          hour: saat,
+          minute: dakika,
+          repeats: true,
+        },
+      });
+      logger.info('Günlük hatırlatıcı planlandı', { saat: ayarlar.gunlukHatirlaticiSaat }, 'useBildirimler');
     }
 
-    // Tüm namaz vakitlerini planla (namazVakitleriAktif açıksa hepsi aktif)
-    const namazVakitleri = [
-      { isim: 'İmsak', saat: vakitler.imsak },
-      { isim: 'Güneş', saat: vakitler.gunes },
-      { isim: 'Öğle', saat: vakitler.ogle },
-      { isim: 'İkindi', saat: vakitler.ikindi },
-      { isim: 'Akşam', saat: vakitler.aksam },
-      { isim: 'Yatsı', saat: vakitler.yatsi },
-    ];
-
-
-    for (const vakit of namazVakitleri) {
-      if (!vakit.saat || vakit.saat.length < 5) {
-        logger.warn('Geçersiz vakit formatı', { vakit: vakit.isim, saat: vakit.saat }, 'useBildirimler');
-        continue;
-      }
-
-      const [saat, dakika] = vakit.saat.split(':').map(Number);
-
-      // Bildirim tarihini sıfırdan oluştur (timezone güvenli)
-      const bildirimTarih = new Date(yil, ay, gun, saat, dakika, 0, 0);
-      const bildirimTimestamp = bildirimTarih.getTime();
-
-      // Geçmiş vakitleri atla (en az 30 saniye sonrası olmalı)
-      if (bildirimTimestamp <= simdiTimestamp + 30000) {
-        logger.debug('Geçmiş vakit atlandı', {
-          vakit: vakit.isim,
-          tarih: tarihStr,
-          saat: vakit.saat
-        }, 'useBildirimler');
-        continue;
-      }
-
-      try {
-        const identifier = `namaz-${tarihStr}-${vakit.isim}`;
-
-        // Gün ve vakite göre hadis-i şerif al
-        const hadis = getHadisByTarihVeVakit(bildirimTarih, vakit.isim);
-        const bildirimBody = `"${hadis.metin}" - ${hadis.kaynak}`;
-
+    // 3. Su Hatırlatıcı (Aralıklı)
+    if (ayarlar.suIcmeHatirlaticiAktif) {
+      // Basitlik için sonraki 5 periyodu planla
+      const aralikDakika = ayarlar.suIcmeAraligi || 30;
+      for (let i = 1; i <= 5; i++) {
         await Notifications.scheduleNotificationAsync({
-          identifier,
           content: {
-            title: `🕌 ${vakit.isim} Namazı Vakti`,
-            body: bildirimBody,
-            sound: 'yunus_emre.mp3', // Dosya uzantısı ile birlikte
-
-            data: {
-              vakit: vakit.isim,
-              ezanSesi: ayarlar.ezanSesiAktif ?? true,
-            },
-            ...(Platform.OS === 'android' && {
-              channelId: CHANNEL_NAMAZ,
-              color: '#1a5f3f',
-              priority: Notifications.AndroidNotificationPriority.MAX,
-            }),
+            title: '💧 Su Vakti',
+            body: 'Sağlığınız için bir bardak su içmeyi unutmayın.',
+            sound: 'yunus_emre.mp3',
           },
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: bildirimTimestamp,
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: i * aralikDakika * 60,
           },
         });
-
-        logger.debug('Namaz bildirimi planlandı', {
-          id: identifier,
-          vakit: vakit.isim,
-          tarih: bildirimTarih.toLocaleString('tr-TR'),
-          timestamp: bildirimTimestamp
-        }, 'useBildirimler');
-      } catch (error) {
-        logger.error('Namaz bildirimi planlanırken hata', { error, vakit: vakit.isim }, 'useBildirimler');
       }
+      logger.info('Su hatırlatıcıları planlandı', { aralik: aralikDakika }, 'useBildirimler');
     }
-  }
-}
 
-/**
- * Oruç/Fasting dönemi bildirimleri (sahur, iftar)
- * Artık her zaman çalışır (Ramazan dışı nafile oruçlar için de uygun)
- */
-async function scheduleFastingNotifications(sehirAdi: string, ayarlar: any) {
-  const simdi = new Date();
-  const simdiTimestamp = simdi.getTime();
+    // 4. Namaz Vakitleri (Eğer aktifse)
+    if (ayarlar.namazVakitleriAktif && sehir) {
+      const vakitler = await getNamazVakitleri(sehir.isim);
+      if (vakitler) {
+        const vakitIsimleri = {
+          imsak: 'İmsak',
+          gunes: 'Güneş',
+          ogle: 'Öğle',
+          ikindi: 'İkindi',
+          aksam: 'Akşam',
+          yatsi: 'Yatsı'
+        };
 
-  // Önümüzdeki 7 günü planla
-  const planlanacakGunSayisi = 7;
+        for (const [key, vakit] of Object.entries(vakitler) as [string, string][]) {
+          const [vakitSaat, vakitDakika] = vakit.split(':').map(Number);
+          const hedefTarih = new Date();
+          hedefTarih.setHours(vakitSaat, vakitDakika, 0, 0);
 
-  logger.info(`${planlanacakGunSayisi} günlük oruç bildirimi planlanıyor...`, { sehirAdi }, 'useBildirimler');
+          // Eğer vakit geçtiyse yarına planla
+          if (hedefTarih <= new Date()) {
+            hedefTarih.setDate(hedefTarih.getDate() + 1);
+          }
 
-  for (let i = 0; i < planlanacakGunSayisi; i++) {
-    // Her gün için yeni bir tarih oluştur (timezone problemlerini önlemek için)
-    const tarih = new Date();
-    tarih.setDate(tarih.getDate() + i);
-    tarih.setHours(0, 0, 0, 0); // Günün başına sıfırla
-
-    const yil = tarih.getFullYear();
-    const ay = tarih.getMonth();
-    const gun = tarih.getDate();
-    const tarihStr = `${yil}-${String(ay + 1).padStart(2, '0')}-${String(gun).padStart(2, '0')}`;
-
-    const vakitler = await getTarihNamazVakitleri(tarih, sehirAdi);
-
-    if (!vakitler) continue;
-
-    // Sahur hatırlatıcısı (Kullanıcının ayarladığı saatte)
-    if (ayarlar.sahurAktif && ayarlar.sahurSaat) {
-      const [saat, dakika] = ayarlar.sahurSaat.split(':').map(Number);
-
-      // Timezone güvenli tarih oluşturma
-      const sahurTarih = new Date(yil, ay, gun, saat, dakika, 0, 0);
-      const sahurTimestamp = sahurTarih.getTime();
-
-      if (sahurTimestamp > simdiTimestamp + 30000) {
-        const sahurId = `sahur-${tarihStr}`;
-        try {
           await Notifications.scheduleNotificationAsync({
-            identifier: sahurId,
             content: {
-              title: '🌅 Sahur Hatırlatıcısı',
-              body: `Sahur vaktiniz yaklaşıyor! İmsak: ${vakitler?.imsak || 'Bilinmiyor'}`,
-              sound: 'ney.mp3',
-              ...(Platform.OS === 'android' && {
-                channelId: CHANNEL_HATIRLATICI,
-                color: '#1a5f3f',
-                priority: Notifications.AndroidNotificationPriority.MAX,
-              }),
+              title: `🕌 ${vakitIsimleri[key as keyof typeof vakitIsimleri]} Vakti`,
+              body: `${sehir.isim} için ${vakitIsimleri[key as keyof typeof vakitIsimleri]} vakti geldi.`,
+              sound: 'yunus_emre.mp3', // ezan.mp3 yerine yunus_emre.mp3
+              categoryIdentifier: key === 'aksam' || key === 'imsak' ? 'ramazan' : undefined,
             },
             trigger: {
               type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: sahurTimestamp,
+              date: hedefTarih,
             },
           });
-          logger.debug('Sahur bildirimi planlandı', {
-            id: sahurId,
-            tarih: sahurTarih.toLocaleString('tr-TR'),
-            timestamp: sahurTimestamp,
-            ayarlananSaat: ayarlar.sahurSaat
-          }, 'useBildirimler');
-        } catch (error) {
-          logger.error('Sahur bildirimi planlanırken hata', { error }, 'useBildirimler');
         }
-      } else {
-        logger.debug('Sahur vakti geçmiş, planlanmadı', { tarih: tarihStr, saat: ayarlar.sahurSaat }, 'useBildirimler');
+        logger.info('Yerel namaz vakitleri planlandı', undefined, 'useBildirimler');
       }
     }
 
-
-    // İftar hatırlatıcısı (Kullanıcının ayarladığı saatte)
-    if (ayarlar.iftarAktif && ayarlar.iftarSaat) {
-      const [saat, dakika] = ayarlar.iftarSaat.split(':').map(Number);
-
-      // Timezone güvenli tarih oluşturma
-      const iftarTarih = new Date(yil, ay, gun, saat, dakika, 0, 0);
-      const iftarTimestamp = iftarTarih.getTime();
-
-      if (iftarTimestamp > simdiTimestamp + 30000) {
-        const iftarId = `iftar-${tarihStr}`;
-        try {
-          await Notifications.scheduleNotificationAsync({
-            identifier: iftarId,
-            content: {
-              title: '🌇 İftar Hatırlatıcısı',
-              body: `İftar vaktiniz yaklaşıyor! Akşam: ${vakitler?.aksam || 'Bilinmiyor'}`,
-              sound: 'ney.mp3',
-              ...(Platform.OS === 'android' && {
-                channelId: CHANNEL_HATIRLATICI,
-                color: '#1a5f3f',
-                priority: Notifications.AndroidNotificationPriority.MAX,
-              }),
-            },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: iftarTimestamp,
-            },
-          });
-          logger.debug('İftar bildirimi planlandı', {
-            id: iftarId,
-            tarih: iftarTarih.toLocaleString('tr-TR'),
-            timestamp: iftarTimestamp,
-            ayarlananSaat: ayarlar.iftarSaat
-          }, 'useBildirimler');
-        } catch (error) {
-          logger.error('İftar bildirimi planlanırken hata', { error }, 'useBildirimler');
-        }
-      } else {
-        logger.debug('İftar vakti geçmiş, planlanmadı', { tarih: tarihStr, saat: ayarlar.iftarSaat }, 'useBildirimler');
-      }
-    }
-
+  } catch (error) {
+    logger.error('Yerel bildirimler planlanırken hata', { error }, 'useBildirimler');
   }
 }
 
@@ -349,7 +217,10 @@ export async function sendTestNotification() {
       content: {
         title: '✅ Bildirimler Çalışıyor!',
         body: 'Şükür365 bildirimleri başarıyla ayarlandı.',
-        sound: 'ney.mp3',
+        // iOS için sound (Android'de channel'dan gelir)
+        ...(Platform.OS === 'ios' && {
+          sound: 'yunus_emre.mp3',
+        }),
         ...(Platform.OS === 'android' && {
           channelId: CHANNEL_HATIRLATICI,
           color: '#1a5f3f',
@@ -384,6 +255,98 @@ export async function getScheduledNotifications() {
 }
 
 /**
+ * Kullanıcı tarafından belirlenen özel bir saatte bildirim planla
+ */
+export async function scheduleCustomNotification(saat: number, dakika: number, baslik: string = '⏰ Hatırlatıcı') {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: baslik,
+        body: 'Belirlediğiniz vakit geldi.',
+        ...(Platform.OS === 'ios' && {
+          sound: 'yunus_emre.mp3',
+        }),
+        ...(Platform.OS === 'android' && {
+          channelId: CHANNEL_HATIRLATICI,
+        }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+        hour: saat,
+        minute: dakika,
+        repeats: true,
+      },
+    });
+    logger.info('Özel bildirim planlandı', { saat, dakika }, 'useBildirimler');
+    return true;
+  } catch (error) {
+    logger.error('Özel bildirim planlanamadı', { error }, 'useBildirimler');
+    return false;
+  }
+}
+
+/**
+ * Bir not için bildirim planla
+ */
+export async function scheduleNotBildirimi(not: any) {
+  if (!not.hatirlatici) return null;
+
+  try {
+    const hatirlaticiTarih = new Date(not.hatirlatici);
+
+    // Geçmiş bir tarihe bildirim kurmaya çalışma
+    if (hatirlaticiTarih <= new Date()) {
+      logger.warn('Geçmiş tarihli not bildirimi kurulamaz', { notId: not.id }, 'useBildirimler');
+      return null;
+    }
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '📝 Not Hatırlatıcısı',
+        body: not.baslik || not.icerik.substring(0, 50),
+        data: { notId: not.id },
+        ...(Platform.OS === 'ios' && {
+          sound: 'yunus_emre.mp3',
+        }),
+        ...(Platform.OS === 'android' && {
+          channelId: CHANNEL_HATIRLATICI,
+        }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: hatirlaticiTarih,
+      },
+    });
+
+    logger.info('Not bildirimi planlandı', { notId: not.id, tarih: hatirlaticiTarih.toISOString() }, 'useBildirimler');
+    return notificationId;
+  } catch (error) {
+    logger.error('Not bildirimi planlanırken hata', { error, notId: not.id }, 'useBildirimler');
+    return null;
+  }
+}
+
+/**
+ * Not bildirimini iptal et
+ */
+export async function cancelNotBildirimi(notId: string) {
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const target = scheduled.find(n => n.content.data?.notId === notId);
+
+    if (target) {
+      await Notifications.cancelScheduledNotificationAsync(target.identifier);
+      logger.info('Not bildirimi iptal edildi', { notId }, 'useBildirimler');
+      return true;
+    }
+    return false;
+  } catch (error) {
+    logger.error('Not bildirimi iptal edilirken hata', { error, notId }, 'useBildirimler');
+    return false;
+  }
+}
+
+/**
  * Ana bildirim hook'u
  */
 export function useBildirimler() {
@@ -399,31 +362,22 @@ export function useBildirimler() {
       }
 
       // 2. Android kanallarını oluştur
-      await createNotificationChannels();
+      await configureNotifications();
 
-      // 3. Mevcut bildirimleri temizle
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      logger.debug('Mevcut bildirimler temizlendi', undefined, 'useBildirimler');
+      // 4. Firebase Mesajlaşma ve Supabase Senkronizasyonu
+      await setupFirebaseMessaging();
 
-      // 4. Ayarları ve şehri yükle
-      const ayarlar = await yukleBildirimAyarlari();
-      const sehir = await yukleSehir();
-      const sehirAdi = sehir?.isim || 'Istanbul';
+      // 5. Yerel planlama (Hibrit Güvenlik Katmanı)
+      await planlaYerelBildirimler();
+      logger.info('Yerel ve Merkezi bildirim sistemi aktif (Hibrit)', undefined, 'useBildirimler');
 
-      logger.debug('Bildirim ayarları yüklendi', { sehir: sehirAdi, ayarlar }, 'useBildirimler');
-
-      // 5. Namaz vakti bildirimlerini planla
-      await scheduleNamazNotifications(sehirAdi, ayarlar);
-
-      // 6. Oruç bildirimlerini planla (sahur/iftar)
-      await scheduleFastingNotifications(sehirAdi, ayarlar);
-
-      // 7. Planlanan bildirimleri logla
+      // 8. Planlanan bildirimleri logla
       const planlilar = await getScheduledNotifications();
       logger.info(`Toplam ${planlilar.length} bildirim planlandı`, undefined, 'useBildirimler');
 
-      // 8. Ezan sesi listener'ını başlat
-      bildirimEzanSesiBaslat();
+      // Not: Ezan sesi artık OS notification sound olarak çalıyor
+      // (Android channel sound, iOS notification sound)
+      // JS listener ile ses çalma kaldırıldı - app kapalıyken de çalışır
 
     } catch (error) {
       logger.error('Bildirimler ayarlanırken hata', { error }, 'useBildirimler');
@@ -432,11 +386,15 @@ export function useBildirimler() {
 
   useEffect(() => {
     bildirimleriAyarla();
-
-    return () => {
-      bildirimEzanSesiTemizle();
-    };
+    // Cleanup artık gerekli değil - OS notification sound kullanılıyor
   }, [bildirimleriAyarla]);
 
-  return { bildirimleriAyarla, sendTestNotification, getScheduledNotifications };
+  return {
+    bildirimleriAyarla,
+    sendTestNotification,
+    getScheduledNotifications,
+    scheduleCustomNotification,
+    scheduleNotBildirimi,
+    cancelNotBildirimi
+  };
 }

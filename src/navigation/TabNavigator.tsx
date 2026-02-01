@@ -3,8 +3,10 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useTheme } from '../hooks/useTheme';
 
 // Ekranlar
 import HomeScreen from '../screens/HomeScreen';
@@ -19,7 +21,8 @@ import AyarlarScreen from '../screens/AyarlarScreen';
 import NotlarScreen from '../screens/NotlarScreen';
 import WidgetScreen from '../screens/WidgetScreen';
 import QuranScreen from '../screens/QuranScreen';
-import { KaabaIcon, TrackingIcon, ToolsIcon, MoreIcon, QuranIcon } from '../components/IslamicIcons';
+import AIDuaScreen from '../screens/AIDuaScreen';
+import BildirimTestScreen from '../screens/Ayarlar/BildirimTestScreen';
 
 // Ekstra ekranlar
 import ZekatScreen from '../screens/ekstra/ZekatScreen';
@@ -30,29 +33,51 @@ import TeravihScreen from '../screens/ekstra/TeravihScreen';
 import SadakaScreen from '../screens/ekstra/SadakaScreen';
 import SuHatirlaticiScreen from '../screens/ekstra/SuHatirlaticiScreen';
 import IftarMenuOnerileriScreen from '../screens/ekstra/IftarMenuOnerileriScreen';
+import KazaTakibiScreen from '../screens/ekstra/KazaTakibiScreen';
+
+// Ionicons İsimleri
+const TAB_ICONS = {
+    ana: { active: 'home', inactive: 'home-outline' },
+    takip: { active: 'stats-chart', inactive: 'stats-chart-outline' },
+    kuran: { active: 'book', inactive: 'book-outline' },
+    araclar: { active: 'grid', inactive: 'grid-outline' },
+    ayarlar: { active: 'settings', inactive: 'settings-outline' },
+} as const;
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 // Tab ikonu component
 interface TabIconProps {
-    IconComponent: React.ElementType;
+    name: any;
     focused: boolean;
-    color: string;
 }
 
-const TabIcon = ({ IconComponent, focused, color }: TabIconProps) => (
-    <View style={[styles.tabIconContainer, focused && styles.tabIconContainerActive]}>
-        <IconComponent color={color} size={24} />
-    </View>
-);
+const TabIcon = ({ name, focused }: TabIconProps) => {
+    const tema = useTheme();
+    const iconName = focused ? TAB_ICONS[name as keyof typeof TAB_ICONS].active : TAB_ICONS[name as keyof typeof TAB_ICONS].inactive;
+
+    return (
+        <View style={styles.tabIconContainer}>
+            <Ionicons
+                name={iconName as any}
+                size={26}
+                color={focused ? tema.vurgu : ISLAMI_RENKLER.yaziBeyazYumusak}
+            />
+            {focused && (
+                <View style={[styles.activeDot, { backgroundColor: tema.vurgu }]} />
+            )}
+        </View>
+    );
+};
 
 // Ana Sayfa Stack
 function AnaSayfaStack() {
+    const tema = useTheme();
     return (
         <Stack.Navigator
             screenOptions={{
-                headerStyle: { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil },
+                headerStyle: { backgroundColor: tema.arkaPlan },
                 headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
                 headerTitleStyle: { fontFamily: TYPOGRAPHY.display, fontWeight: '700' },
                 headerShadowVisible: false,
@@ -69,10 +94,11 @@ function AnaSayfaStack() {
 
 // Takip Stack
 function TakipStack() {
+    const tema = useTheme();
     return (
         <Stack.Navigator
             screenOptions={{
-                headerStyle: { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil },
+                headerStyle: { backgroundColor: tema.arkaPlan },
                 headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
                 headerTitleStyle: { fontFamily: TYPOGRAPHY.display, fontWeight: '700' },
                 headerShadowVisible: false,
@@ -94,10 +120,11 @@ function TakipStack() {
 
 // Kur'an Stack
 function KuranStack() {
+    const tema = useTheme();
     return (
         <Stack.Navigator
             screenOptions={{
-                headerStyle: { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil },
+                headerStyle: { backgroundColor: tema.arkaPlan },
                 headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
                 headerTitleStyle: { fontFamily: TYPOGRAPHY.display, fontWeight: '700' },
                 headerShadowVisible: false,
@@ -112,6 +139,11 @@ function KuranStack() {
                 name="Dualar"
                 component={DualarScreen}
                 options={{ title: '🤲 Dualar' }}
+            />
+            <Stack.Screen
+                name="AIDua"
+                component={AIDuaScreen}
+                options={{ title: '✨ AI Dua Asistanı' }}
             />
             <Stack.Screen
                 name="KuranAyetleri"
@@ -139,10 +171,11 @@ function KuranStack() {
 
 // Araçlar Stack
 function AraclarStack() {
+    const tema = useTheme();
     return (
         <Stack.Navigator
             screenOptions={{
-                headerStyle: { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil },
+                headerStyle: { backgroundColor: tema.arkaPlan },
                 headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
                 headerTitleStyle: { fontFamily: TYPOGRAPHY.display, fontWeight: '700' },
                 headerShadowVisible: false,
@@ -161,6 +194,7 @@ function AraclarStack() {
             <Stack.Screen name="Sadaka" component={SadakaScreen} options={{ title: '💝 Sadaka' }} />
             <Stack.Screen name="Su Hatırlatıcı" component={SuHatirlaticiScreen} options={{ title: '💧 Su Hatırlatıcı' }} />
             <Stack.Screen name="İftar Menü Önerileri" component={IftarMenuOnerileriScreen} options={{ title: '💡 Menü Önerileri' }} />
+            <Stack.Screen name="Kaza Takibi" component={KazaTakibiScreen} options={{ title: '📊 Kaza Takibi' }} />
             <Stack.Screen name="Notlar" component={NotlarScreen} options={{ title: '📝 Notlar' }} />
             <Stack.Screen name="Ana Ekran Widget" component={WidgetScreen} options={{ title: '🧩 Widget' }} />
         </Stack.Navigator>
@@ -169,10 +203,11 @@ function AraclarStack() {
 
 // Daha Fazla Stack
 function DahaFazlaStack() {
+    const tema = useTheme();
     return (
         <Stack.Navigator
             screenOptions={{
-                headerStyle: { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil },
+                headerStyle: { backgroundColor: tema.arkaPlan },
                 headerTintColor: ISLAMI_RENKLER.yaziBeyaz,
                 headerTitleStyle: { fontFamily: TYPOGRAPHY.display, fontWeight: '700' },
                 headerShadowVisible: false,
@@ -183,6 +218,11 @@ function DahaFazlaStack() {
                 component={AyarlarScreen}
                 options={{ title: '⚙️ Ayarlar' }}
             />
+            <Stack.Screen
+                name="BildirimTest"
+                component={BildirimTestScreen}
+                options={{ title: '🔔 Bildirim Testi' }}
+            />
         </Stack.Navigator>
     );
 }
@@ -190,6 +230,7 @@ function DahaFazlaStack() {
 // Ana Tab Navigator
 export default function TabNavigator() {
     const insets = useSafeAreaInsets();
+    const tema = useTheme();
 
     return (
         <Tab.Navigator
@@ -198,11 +239,13 @@ export default function TabNavigator() {
                 tabBarStyle: [
                     styles.tabBar,
                     {
-                        height: Platform.OS === 'ios' ? 88 : 65 + insets.bottom,
-                        paddingBottom: Platform.OS === 'ios' ? 28 : insets.bottom + 8,
+                        height: Platform.OS === 'ios' ? 88 : 70 + insets.bottom,
+                        paddingBottom: Platform.OS === 'ios' ? 32 : insets.bottom + 10,
+                        backgroundColor: tema.arkaPlan,
+                        borderTopColor: `${tema.vurgu}33`,
                     }
                 ],
-                tabBarActiveTintColor: ISLAMI_RENKLER.altinAcik,
+                tabBarActiveTintColor: tema.vurgu,
                 tabBarInactiveTintColor: ISLAMI_RENKLER.yaziBeyazYumusak,
                 tabBarLabelStyle: styles.tabLabel,
                 tabBarHideOnKeyboard: true,
@@ -212,8 +255,8 @@ export default function TabNavigator() {
                 name="Ana"
                 component={AnaSayfaStack}
                 options={{
-                    tabBarIcon: ({ focused, color }) => (
-                        <TabIcon IconComponent={KaabaIcon} focused={focused} color={color} />
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon name="ana" focused={focused} />
                     ),
                 }}
             />
@@ -221,8 +264,8 @@ export default function TabNavigator() {
                 name="Takip"
                 component={TakipStack}
                 options={{
-                    tabBarIcon: ({ focused, color }) => (
-                        <TabIcon IconComponent={TrackingIcon} focused={focused} color={color} />
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon name="takip" focused={focused} />
                     ),
                 }}
             />
@@ -230,8 +273,8 @@ export default function TabNavigator() {
                 name="Kur'an"
                 component={KuranStack}
                 options={{
-                    tabBarIcon: ({ focused, color }) => (
-                        <TabIcon IconComponent={QuranIcon} focused={focused} color={color} />
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon name="kuran" focused={focused} />
                     ),
                 }}
             />
@@ -239,8 +282,8 @@ export default function TabNavigator() {
                 name="Araçlar"
                 component={AraclarStack}
                 options={{
-                    tabBarIcon: ({ focused, color }) => (
-                        <TabIcon IconComponent={ToolsIcon} focused={focused} color={color} />
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon name="araclar" focused={focused} />
                     ),
                 }}
             />
@@ -249,8 +292,8 @@ export default function TabNavigator() {
                 component={DahaFazlaStack}
                 options={{
                     tabBarLabel: 'Ayarlar',
-                    tabBarIcon: ({ focused, color }) => (
-                        <TabIcon IconComponent={MoreIcon} focused={focused} color={color} />
+                    tabBarIcon: ({ focused }) => (
+                        <TabIcon name="ayarlar" focused={focused} />
                     ),
                 }}
             />
@@ -260,28 +303,36 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
     tabBar: {
-        backgroundColor: ISLAMI_RENKLER.arkaPlanYesil,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(218, 165, 32, 0.2)',
-        paddingTop: 8,
-        elevation: 0,
-        shadowOpacity: 0,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4, // Daha düşük ve verimli bir elevation
+            },
+        }),
     },
     tabLabel: {
         fontSize: 11,
         fontFamily: TYPOGRAPHY.body,
         fontWeight: '600',
-        marginTop: 4,
+        marginTop: -4,
     },
     tabIconContainer: {
-        width: 40,
-        height: 32,
-        borderRadius: 12,
+        width: 44,
+        height: 44,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
     },
-    tabIconContainerActive: {
-        backgroundColor: 'rgba(218, 165, 32, 0.15)',
-    },
+    activeDot: {
+        position: 'absolute',
+        bottom: -2,
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+    }
 });

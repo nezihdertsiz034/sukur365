@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,18 +18,27 @@ import { useNotlar } from '../hooks/useNotlar';
 import { Not } from '../types';
 import { tarihToString } from '../utils/ramazanTarihleri';
 import { BackgroundDecor } from '../components/BackgroundDecor';
+import { useTheme } from '../hooks/useTheme';
+import { SaatSecici } from '../components/SaatSecici';
+import { TarihSecici } from '../components/TarihSecici';
+import { scheduleNotBildirimi, cancelNotBildirimi } from '../hooks/useBildirimler';
 
 export default function NotlarScreen() {
   const { notlar, yukleniyor, notKaydet, notSil } = useNotlar();
+  const tema = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [seciliNot, setSeciliNot] = useState<Not | null>(null);
   const [baslik, setBaslik] = useState('');
   const [icerik, setIcerik] = useState('');
+  const [hatirlatici, setHatirlatici] = useState<number | undefined>(undefined);
+
+  const [tarihModalVisible, setTarihModalVisible] = useState(false);
+  const [saatModalVisible, setSaatModalVisible] = useState(false);
 
   const route = useRoute<RouteProp<{ params: { date?: string } }, 'params'>>();
 
   // Dışarıdan gelen tarih parametresini kontrol et
-  React.useEffect(() => {
+  useEffect(() => {
     if (route.params?.date && !yukleniyor) {
       const hedefTarih = route.params.date;
       const mevcutNot = notlar.find(n => n.tarih === hedefTarih);
@@ -60,6 +69,7 @@ export default function NotlarScreen() {
     setSeciliNot(null);
     setBaslik('');
     setIcerik('');
+    setHatirlatici(undefined);
     setModalVisible(true);
   };
 
@@ -67,6 +77,7 @@ export default function NotlarScreen() {
     setSeciliNot(not);
     setBaslik(not.baslik || '');
     setIcerik(not.icerik);
+    setHatirlatici(not.hatirlatici);
     setModalVisible(true);
   };
 
@@ -84,12 +95,23 @@ export default function NotlarScreen() {
         baslik: baslik.trim() || undefined,
         icerik: icerik.trim(),
         olusturmaTarihi: seciliNot?.olusturmaTarihi || Date.now(),
+        hatirlatici,
       };
 
       await notKaydet(yeniNot);
+
+      // Bildirim Planla/Güncelle
+      if (hatirlatici) {
+        await scheduleNotBildirimi(yeniNot);
+      } else if (seciliNot?.id) {
+        // Önceden vardıysa ama şimdi silindiyse iptal et
+        await cancelNotBildirimi(seciliNot.id);
+      }
+
       setModalVisible(false);
       setBaslik('');
       setIcerik('');
+      setHatirlatici(undefined);
       setSeciliNot(null);
     } catch (error) {
       Alert.alert('Hata', 'Not kaydedilirken bir hata oluştu.');
@@ -108,6 +130,7 @@ export default function NotlarScreen() {
           onPress: async () => {
             try {
               await notSil(not.id);
+              await cancelNotBildirimi(not.id);
             } catch (error) {
               Alert.alert('Hata', 'Not silinirken bir hata oluştu.');
             }
@@ -126,25 +149,33 @@ export default function NotlarScreen() {
     return `${gun} ${aylar[parseInt(ay) - 1]} ${yil}`;
   };
 
+  const formatHatirlatici = (ts?: number): string => {
+    if (!ts) return '';
+    const date = new Date(ts);
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return `${formatTarih(tarihToString(date))} saat ${h}:${m}`;
+  };
+
   if (yukleniyor) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tema.arkaPlan }]}>
         <BackgroundDecor />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={ISLAMI_RENKLER.altinAcik} />
+          <ActivityIndicator size="large" color={tema.vurgu} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tema.arkaPlan }]}>
       <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>📝 Notlar</Text>
-          <TouchableOpacity style={styles.ekleButonu} onPress={handleNotEkle}>
-            <Text style={styles.ekleButonuText}>+ Yeni Not</Text>
+          <Text style={[styles.title, { color: ISLAMI_RENKLER.yaziBeyaz }]}>📝 Notlar</Text>
+          <TouchableOpacity style={[styles.ekleButonu, { backgroundColor: tema.vurgu }]} onPress={handleNotEkle}>
+            <Text style={[styles.ekleButonuText, { color: '#000' }]}>+ Yeni Not</Text>
           </TouchableOpacity>
         </View>
 
@@ -158,12 +189,21 @@ export default function NotlarScreen() {
             {notlar.map((not) => (
               <TouchableOpacity
                 key={not.id}
-                style={styles.notKart}
+                style={[
+                  styles.notKart,
+                  { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta },
+                  { borderColor: `${tema.vurgu}20` }
+                ]}
                 onPress={() => handleNotDuzenle(not)}
                 onLongPress={() => handleNotSil(not)}
               >
                 <View style={styles.notHeader}>
-                  <Text style={styles.notTarih}>{formatTarih(not.tarih)}</Text>
+                  <View style={styles.notTarihContainer}>
+                    <Text style={[styles.notTarih, { color: tema.vurgu }]}>{formatTarih(not.tarih)}</Text>
+                    {not.hatirlatici && (
+                      <Text style={styles.hatirlaticiIcon}> 🔔</Text>
+                    )}
+                  </View>
                   <TouchableOpacity
                     onPress={() => handleNotSil(not)}
                     style={styles.silButonu}
@@ -172,11 +212,16 @@ export default function NotlarScreen() {
                   </TouchableOpacity>
                 </View>
                 {not.baslik && (
-                  <Text style={styles.notBaslik}>{not.baslik}</Text>
+                  <Text style={[styles.notBaslik, { color: tema.yaziRenk }]}>{not.baslik}</Text>
                 )}
-                <Text style={styles.notIcerik} numberOfLines={3}>
+                <Text style={[styles.notIcerik, { color: tema.yaziRenk }]} numberOfLines={2}>
                   {not.icerik}
                 </Text>
+                {not.hatirlatici && (
+                  <Text style={[styles.notHatirlaticiText, { color: tema.vurgu }]}>
+                    ⏰ {formatHatirlatici(not.hatirlatici)}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -191,23 +236,23 @@ export default function NotlarScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalBaslik}>
+          <View style={[styles.modalContent, { backgroundColor: tema.arkaPlan === '#05111A' ? '#0A1A26' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}33`, borderWidth: 1 }]}>
+            <Text style={[styles.modalBaslik, { color: tema.yaziRenk }]}>
               {seciliNot ? 'Notu Düzenle' : 'Yeni Not Ekle'}
             </Text>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: tema.yaziRenk, borderColor: `${tema.vurgu}20`, backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)' }]}
               placeholder="Başlık (opsiyonel)"
-              placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+              placeholderTextColor={tema.yaziRenkSoluk}
               value={baslik}
               onChangeText={setBaslik}
             />
 
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { color: tema.yaziRenk, borderColor: `${tema.vurgu}20`, backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)' }]}
               placeholder="Not içeriği..."
-              placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+              placeholderTextColor={tema.yaziRenkSoluk}
               value={icerik}
               onChangeText={setIcerik}
               multiline
@@ -215,9 +260,54 @@ export default function NotlarScreen() {
               textAlignVertical="top"
             />
 
+            <View style={styles.hatirlaticiSection}>
+              <Text style={[styles.sectionLabel, { color: tema.yaziRenk }]}>⏰ Hatırlatıcı</Text>
+              {hatirlatici ? (
+                <View style={styles.hatirlaticiAktifContainer}>
+                  <View style={styles.hatirlaticiBilgi}>
+                    <Text style={[styles.hatirlaticiText, { color: tema.yaziRenk }]}>
+                      {formatHatirlatici(hatirlatici)}
+                    </Text>
+                  </View>
+                  <View style={styles.hatirlaticiAksiyonlar}>
+                    <TouchableOpacity
+                      onPress={() => setTarihModalVisible(true)}
+                      style={[styles.miniButon, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+                    >
+                      <Text style={{ fontSize: 16 }}>📅</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setSaatModalVisible(true)}
+                      style={[styles.miniButon, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+                    >
+                      <Text style={{ fontSize: 16 }}>🕒</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setHatirlatici(undefined)}
+                      style={[styles.miniButon, { backgroundColor: 'rgba(255,50,50,0.2)' }]}
+                    >
+                      <Text style={{ fontSize: 16 }}>✖️</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.hatirlaticiEkleButonu, { borderColor: `${tema.vurgu}40` }]}
+                  onPress={() => {
+                    const d = new Date();
+                    d.setHours(d.getHours() + 1);
+                    d.setMinutes(0);
+                    setHatirlatici(d.getTime());
+                  }}
+                >
+                  <Text style={[styles.hatirlaticiEkleText, { color: tema.vurgu }]}>+ Hatırlatıcı Ekle</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             <View style={styles.modalButonlar}>
               <TouchableOpacity
-                style={[styles.modalButonu, styles.iptalButonu]}
+                style={[styles.modalButonu, styles.iptalButonu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)' }]}
                 onPress={() => {
                   setModalVisible(false);
                   setBaslik('');
@@ -225,18 +315,47 @@ export default function NotlarScreen() {
                   setSeciliNot(null);
                 }}
               >
-                <Text style={styles.modalButonuText}>İptal</Text>
+                <Text style={[styles.modalButonuText, { color: tema.yaziRenk }]}>İptal</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButonu, styles.kaydetButonu]}
+                style={[styles.modalButonu, styles.kaydetButonu, { backgroundColor: tema.vurgu }]}
                 onPress={handleNotKaydet}
               >
-                <Text style={styles.modalButonuText}>Kaydet</Text>
+                <Text style={[styles.modalButonuText, { color: '#000' }]}>Kaydet</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Tarih Seçici */}
+      <TarihSecici
+        visible={tarihModalVisible}
+        mevcutTarih={new Date(hatirlatici || Date.now())}
+        onClose={() => setTarihModalVisible(false)}
+        onTarihSec={(tarih) => {
+          const eski = new Date(hatirlatici || Date.now());
+          tarih.setHours(eski.getHours());
+          tarih.setMinutes(eski.getMinutes());
+          setHatirlatici(tarih.getTime());
+        }}
+        baslik="Hatırlatma Tarihi"
+      />
+
+      {/* Saat Seçici */}
+      <SaatSecici
+        visible={saatModalVisible}
+        mevcutSaat={hatirlatici ? `${String(new Date(hatirlatici).getHours()).padStart(2, '0')}:${String(new Date(hatirlatici).getMinutes()).padStart(2, '0')}` : '12:00'}
+        onClose={() => setSaatModalVisible(false)}
+        onSaatSec={(saatString) => {
+          const [h, m] = saatString.split(':').map(Number);
+          const yeni = new Date(hatirlatici || Date.now());
+          yeni.setHours(h);
+          yeni.setMinutes(m);
+          setHatirlatici(yeni.getTime());
+        }}
+        baslik="Hatırlatma Saati"
+      />
     </SafeAreaView>
   );
 }
@@ -327,17 +446,84 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   notBaslik: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: ISLAMI_RENKLER.yaziBeyaz,
-    marginBottom: 8,
+    color: '#FF3B30', // Başlık kırmızı
+    marginBottom: 4,
     fontFamily: TYPOGRAPHY.display,
   },
   notIcerik: {
-    fontSize: 15,
-    color: ISLAMI_RENKLER.yaziBeyaz,
-    lineHeight: 22,
+    fontSize: 14,
+    color: '#FFFFFF', // İçerik beyaz
+    lineHeight: 20,
     fontFamily: TYPOGRAPHY.body,
+    opacity: 0.9,
+  },
+  notTarihContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hatirlaticiIcon: {
+    fontSize: 12,
+  },
+  notHatirlaticiText: {
+    fontSize: 11,
+    fontFamily: TYPOGRAPHY.body,
+    marginTop: 8,
+    fontWeight: '600',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  hatirlaticiSection: {
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+    fontFamily: TYPOGRAPHY.body,
+  },
+  hatirlaticiEkleButonu: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  hatirlaticiEkleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: TYPOGRAPHY.body,
+  },
+  hatirlaticiAktifContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 10,
+  },
+  hatirlaticiBilgi: {
+    flex: 1,
+  },
+  hatirlaticiText: {
+    fontSize: 13,
+    fontWeight: '500',
+    fontFamily: TYPOGRAPHY.body,
+  },
+  hatirlaticiAksiyonlar: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  miniButon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,

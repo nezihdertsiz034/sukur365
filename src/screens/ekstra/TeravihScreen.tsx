@@ -5,12 +5,15 @@ import { ekstraStiller } from './ekstraStyles';
 import { Teravih } from '../../types';
 import { getirTarihTeravih, kaydetTeravih, yukleTeravihler } from '../../utils/storage';
 import { tarihToString } from '../../utils/ramazanTarihleri';
+import { useTheme } from '../../hooks/useTheme';
+import { ISLAMI_RENKLER } from '../../constants/renkler';
 
-interface TeravihScreenProps {}
+interface TeravihScreenProps { }
 
 export default function TeravihScreen(_props: TeravihScreenProps) {
   const [teravihler, setTeravihler] = useState<Teravih[]>([]);
   const [teravihModalVisible, setTeravihModalVisible] = useState(false);
+  const tema = useTheme();
 
   useEffect(() => {
     verileriYukle();
@@ -58,20 +61,20 @@ export default function TeravihScreen(_props: TeravihScreenProps) {
 
   return (
     <>
-      <EkstraScreenLayout baslik="🕌 Teravih Takibi">
-        <View style={ekstraStiller.bolum}>
+      <EkstraScreenLayout baslik="🕌 Teravih Takibi" geriDonHedef="AraclarMain">
+        <View style={[ekstraStiller.bolum, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20`, borderWidth: 1 }]}>
           <View style={ekstraStiller.bolumHeader}>
-            <Text style={ekstraStiller.bolumBaslik}>Teravih Namazı</Text>
+            <Text style={[ekstraStiller.bolumBaslik, { color: tema.yaziRenk }]}>Teravih Namazı</Text>
             <TouchableOpacity
-              style={ekstraStiller.ekleButonu}
+              style={[ekstraStiller.ekleButonu, { backgroundColor: tema.vurgu }]}
               onPress={() => setTeravihModalVisible(true)}
             >
-              <Text style={ekstraStiller.ekleButonuText}>+</Text>
+              <Text style={[ekstraStiller.ekleButonuText, { color: '#000' }]}>+</Text>
             </TouchableOpacity>
           </View>
-          <View style={ekstraStiller.istatistikKart}>
-            <Text style={ekstraStiller.istatistikDeger}>{tamamlananTeravihSayisi}</Text>
-            <Text style={ekstraStiller.istatistikLabel}>Tamamlanan Teravih</Text>
+          <View style={[ekstraStiller.istatistikKart, { backgroundColor: `${tema.vurgu}10`, borderColor: `${tema.vurgu}33` }]}>
+            <Text style={[ekstraStiller.istatistikDeger, { color: tema.vurgu }]}>{tamamlananTeravihSayisi}</Text>
+            <Text style={[ekstraStiller.istatistikLabel, { color: tema.yaziRenkSoluk }]}>Tamamlanan Teravih</Text>
           </View>
         </View>
       </EkstraScreenLayout>

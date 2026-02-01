@@ -56,6 +56,41 @@ export const ISLAMI_RENKLER = {
 };
 
 /**
+ * Dinamik Tema Renkleri
+ * Günün vaktine göre (Sabah, Gün, Akşam, Gece) değişen renk paletleri
+ */
+export const TEMA_RENKLERI = {
+  SABAH: {
+    ana: '#2E7D32', // Orta Yeşil
+    ikincil: '#4CAF50', // Açık Yeşil
+    arkaPlan: '#0F4C3A',
+    vurgu: '#FFD700', // Altın
+    isik: 'rgba(255, 255, 255, 0.15)',
+  },
+  GUN: {
+    ana: '#1B5E20', // Koyu Yeşil
+    ikincil: '#2E7D32',
+    arkaPlan: '#0A3D2E',
+    vurgu: '#DAA520',
+    isik: 'rgba(255, 255, 255, 0.1)',
+  },
+  AKSAM: {
+    ana: '#1565C0', // Koyu Mavi
+    ikincil: '#1976D2',
+    arkaPlan: '#0D2B45', // Gece Mavisi / Koyu Yeşil Karışımı
+    vurgu: '#FFD700',
+    isik: 'rgba(255, 223, 0, 0.1)', // Altın Işıltısı
+  },
+  GECE: {
+    ana: '#1A237E', // İndigo / Çok Koyu Mavi
+    ikincil: '#0D47A1',
+    arkaPlan: '#05111A', // Siyaha Yakın
+    vurgu: '#B8860B', // Mat Altın
+    isik: 'rgba(255, 255, 255, 0.05)',
+  }
+};
+
+/**
  * Kur'an-ı Kerim okuma için özel renk paleti
  */
 export const KURAN_RENKLER = {

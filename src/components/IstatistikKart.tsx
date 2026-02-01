@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useTheme } from '../hooks/useTheme';
 
 interface IstatistikKartProps {
   baslik: string;
@@ -19,12 +20,13 @@ export const IstatistikKart: React.FC<IstatistikKartProps> = ({
   altBaslik,
   ikon,
 }) => {
+  const tema = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.glassBackground, borderColor: `${tema.vurgu}20` }]}>
       {ikon && <Text style={styles.ikon}>{ikon}</Text>}
       <Text style={styles.baslik}>{baslik}</Text>
       <Text style={styles.deger}>{deger}</Text>
-      {altBaslik && <Text style={styles.altBaslik}>{altBaslik}</Text>}
+      {altBaslik && <Text style={[styles.altBaslik, { color: tema.vurgu }]}>{altBaslik}</Text>}
     </View>
   );
 };

@@ -4,6 +4,7 @@ import { NamazVakitleri } from '../types';
 import { saniyeToZaman } from '../utils/namazVakitleri';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useSettings } from '../context/SettingsContext';
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ interface VakitBilgisi {
  * Sonraki namaza geri sayım ve tüm vakitleri gösteren bileşen
  */
 export const SonrakiNamazSayaci: React.FC<SonrakiNamazSayaciProps> = ({ vakitler, yukleniyor = false }) => {
+    const { yaziBoyutuCarpani } = useSettings();
     const [sonrakiVakit, setSonrakiVakit] = useState<VakitBilgisi | null>(null);
     const [kalanSure, setKalanSure] = useState<number>(0);
     const [aktifVakitIndex, setAktifVakitIndex] = useState<number>(-1);
@@ -87,7 +89,7 @@ export const SonrakiNamazSayaci: React.FC<SonrakiNamazSayaciProps> = ({ vakitler
             {/* Başlık */}
             <View style={styles.header}>
                 <Text style={styles.headerEmoji}>🕌</Text>
-                <Text style={styles.headerTitle}>Namaz Vakitleri</Text>
+                <Text style={[styles.headerTitle, { fontSize: 20 * yaziBoyutuCarpani }]}>Namaz Vakitleri</Text>
             </View>
 
             {/* Sonraki Namaz Sayacı */}
@@ -98,7 +100,7 @@ export const SonrakiNamazSayaci: React.FC<SonrakiNamazSayaciProps> = ({ vakitler
                         <Text style={styles.sonrakiVakit}>{sonrakiVakit.emoji} {sonrakiVakit.isim}</Text>
                     </View>
                     <View style={styles.sayacZaman}>
-                        <Text style={styles.zamanText}>
+                        <Text style={[styles.zamanText, { fontSize: 30 * yaziBoyutuCarpani }]}>
                             {String(zaman.saat).padStart(2, '0')}:{String(zaman.dakika).padStart(2, '0')}:{String(zaman.saniye).padStart(2, '0')}
                         </Text>
                     </View>
@@ -120,9 +122,9 @@ export const SonrakiNamazSayaci: React.FC<SonrakiNamazSayaciProps> = ({ vakitler
                                 aktif && styles.vakitAktif,
                             ]}
                         >
-                            <Text style={styles.vakitEmoji}>{vakit.emoji}</Text>
-                            <Text style={[styles.vakitIsim, gecmis && styles.vakitIsimGecmis]}>{vakit.isim}</Text>
-                            <Text style={[styles.vakitSaat, aktif && styles.vakitSaatAktif]}>{vakit.saat}</Text>
+                            <Text style={[styles.vakitEmoji, { fontSize: 20 * yaziBoyutuCarpani }]}>{vakit.emoji}</Text>
+                            <Text style={[styles.vakitIsim, gecmis && styles.vakitIsimGecmis, { fontSize: 12 * yaziBoyutuCarpani }]}>{vakit.isim}</Text>
+                            <Text style={[styles.vakitSaat, aktif && styles.vakitSaatAktif, { fontSize: 15 * yaziBoyutuCarpani }]}>{vakit.saat}</Text>
                         </View>
                     );
                 })}
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
     },
     zamanText: {
-        fontSize: 36,
+        fontSize: 30,
         fontWeight: '800',
         color: ISLAMI_RENKLER.yaziBeyaz,
         fontFamily: TYPOGRAPHY.display,

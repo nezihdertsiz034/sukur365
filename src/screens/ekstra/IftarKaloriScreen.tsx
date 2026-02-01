@@ -14,6 +14,7 @@ import { ISLAMI_RENKLER } from '../../constants/renkler';
 import { TYPOGRAPHY } from '../../constants/typography';
 import { ekstraStiller } from './ekstraStyles';
 import { YEMEK_VERILERI, YemekVerisi } from '../../constants/yemekVerileri';
+import { useTheme } from '../../hooks/useTheme';
 
 interface KaloriMenu {
   id: string;
@@ -25,6 +26,7 @@ export default function IftarKaloriScreen() {
   const [kaloriMenuler, setKaloriMenuler] = useState<KaloriMenu[]>([]);
   const [modalGorunur, setModalGorunur] = useState(false);
   const [aramaMetni, setAramaMetni] = useState('');
+  const tema = useTheme();
 
   const toplamKalori = kaloriMenuler.reduce((sum, menu) => {
     const kalori = Number.parseFloat(menu.kalori);
@@ -62,25 +64,25 @@ export default function IftarKaloriScreen() {
   );
 
   return (
-    <EkstraScreenLayout baslik="🍽️ İftar Kalori Takibi">
-      <View style={ekstraStiller.bolum}>
+    <EkstraScreenLayout baslik="🍽️ İftar Kalori Takibi" geriDonHedef="AraclarMain">
+      <View style={[ekstraStiller.bolum, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20`, borderWidth: 1 }]}>
         <View style={ekstraStiller.bolumHeader}>
-          <Text style={ekstraStiller.bolumBaslik}>İftar Menüsü</Text>
+          <Text style={[ekstraStiller.bolumBaslik, { color: tema.yaziRenk }]}>İftar Menüsü</Text>
           <View style={styles.butonGrup}>
             <TouchableOpacity
-              style={[ekstraStiller.ekleButonu, { marginRight: 8 }]}
+              style={[ekstraStiller.ekleButonu, { marginRight: 8, backgroundColor: `${tema.vurgu}20` }]}
               onPress={() => setModalGorunur(true)}
             >
               <Text style={styles.butonEmoji}>🔍</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={ekstraStiller.ekleButonu} onPress={manuelEkle}>
-              <Text style={ekstraStiller.ekleButonuText}>+</Text>
+            <TouchableOpacity style={[ekstraStiller.ekleButonu, { backgroundColor: tema.vurgu }]} onPress={manuelEkle}>
+              <Text style={[ekstraStiller.ekleButonuText, { color: '#000' }]}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {kaloriMenuler.length === 0 && (
-          <Text style={ekstraStiller.bilgiText}>
+          <Text style={[ekstraStiller.bilgiText, { color: tema.yaziRenkSoluk }]}>
             Yemek seçmek için 🔍, kendi yemeğinizi eklemek için + butonuna dokunun.
           </Text>
         )}
@@ -89,31 +91,31 @@ export default function IftarKaloriScreen() {
           {kaloriMenuler.map((menu) => (
             <View key={menu.id} style={ekstraStiller.kaloriItem}>
               <TextInput
-                style={[ekstraStiller.kaloriInput, styles.kaloriAd]}
+                style={[ekstraStiller.kaloriInput, styles.kaloriAd, { color: tema.yaziRenk, borderColor: tema.vurgu }]}
                 placeholder="Yemek adı"
-                placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+                placeholderTextColor={tema.yaziRenkSoluk}
                 value={menu.isim}
                 onChangeText={(value) => kaloriGuncelle(menu.id, 'isim', value)}
               />
               <TextInput
-                style={[ekstraStiller.kaloriInput, styles.kaloriDeger]}
+                style={[ekstraStiller.kaloriInput, styles.kaloriDeger, { color: tema.yaziRenk, borderColor: tema.vurgu }]}
                 placeholder="kcal"
-                placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+                placeholderTextColor={tema.yaziRenkSoluk}
                 value={menu.kalori}
                 onChangeText={(value) => kaloriGuncelle(menu.id, 'kalori', value)}
                 keyboardType="decimal-pad"
               />
-              <TouchableOpacity style={ekstraStiller.silButonu} onPress={() => kaloriSil(menu.id)}>
-                <Text style={ekstraStiller.silButonuText}>×</Text>
+              <TouchableOpacity style={[ekstraStiller.silButonu, { backgroundColor: tema.vurgu }]} onPress={() => kaloriSil(menu.id)}>
+                <Text style={[ekstraStiller.silButonuText, { color: '#000' }]}>×</Text>
               </TouchableOpacity>
             </View>
           ))}
         </ScrollView>
 
         {toplamKalori > 0 && (
-          <View style={ekstraStiller.toplamKaloriKart}>
-            <Text style={ekstraStiller.toplamKaloriLabel}>Toplam Kalori:</Text>
-            <Text style={ekstraStiller.toplamKaloriDeger}>
+          <View style={[ekstraStiller.toplamKaloriKart, { backgroundColor: `${tema.vurgu}20`, borderColor: tema.vurgu }]}>
+            <Text style={[ekstraStiller.toplamKaloriLabel, { color: tema.yaziRenk }]}>Toplam Kalori:</Text>
+            <Text style={[ekstraStiller.toplamKaloriDeger, { color: tema.vurgu }]}>
               {toplamKalori.toLocaleString('tr-TR')} kcal
             </Text>
           </View>
@@ -128,13 +130,13 @@ export default function IftarKaloriScreen() {
         onRequestClose={() => setModalGorunur(false)}
       >
         <View style={ekstraStiller.modalOverlay}>
-          <View style={[ekstraStiller.modalContent, { maxHeight: '80%' }]}>
-            <Text style={ekstraStiller.modalBaslik}>Yemek Seçin</Text>
+          <View style={[ekstraStiller.modalContent, { maxHeight: '80%', backgroundColor: tema.arkaPlan, borderColor: tema.vurgu }]}>
+            <Text style={[ekstraStiller.modalBaslik, { color: tema.yaziRenk }]}>Yemek Seçin</Text>
 
             <TextInput
-              style={ekstraStiller.input}
+              style={[ekstraStiller.input, { color: tema.yaziRenk, borderColor: tema.vurgu }]}
               placeholder="Yemek ara..."
-              placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+              placeholderTextColor={tema.yaziRenkSoluk}
               value={aramaMetni}
               onChangeText={setAramaMetni}
             />
@@ -144,24 +146,26 @@ export default function IftarKaloriScreen() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.yemekSecenek}
+                  style={[styles.yemekSecenek, { borderBottomColor: `${tema.vurgu}20` }]}
                   onPress={() => listedenEkle(item)}
                 >
-                  <Text style={styles.yemekSecenekAd}>{item.isim}</Text>
-                  <Text style={styles.yemekSecenekKalori}>{item.kalori} kcal</Text>
+                  <Text style={[styles.yemekSecenekAd, { color: tema.yaziRenk }]}>{item.isim}</Text>
+                  <Text style={[styles.yemekSecenekKalori, { color: tema.vurgu }]}>{item.kalori} kcal</Text>
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={styles.bosListeText}>Yemek bulunamadı.</Text>
+                <Text style={[styles.bosListeText, { color: tema.yaziRenkSoluk }]}>Yemek bulunamadı.</Text>
               }
             />
 
-            <TouchableOpacity
-              style={[ekstraStiller.modalButonu, ekstraStiller.iptalButonu, { marginTop: 16 }]}
-              onPress={() => setModalGorunur(false)}
-            >
-              <Text style={ekstraStiller.modalButonuText}>Kapat</Text>
-            </TouchableOpacity>
+            <View style={ekstraStiller.modalButonlar}>
+              <TouchableOpacity
+                style={[ekstraStiller.modalButonu, ekstraStiller.iptalButonu, { backgroundColor: tema.vurgu }]}
+                onPress={() => setModalGorunur(false)}
+              >
+                <Text style={[ekstraStiller.modalButonuText, { color: '#000' }]}>Çık</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

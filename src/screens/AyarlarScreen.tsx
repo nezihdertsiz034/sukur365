@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,30 +10,34 @@ import {
   FlatList,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { SEHIRLER } from '../constants/sehirler';
 import {
   yukleBildirimAyarlari,
   kaydetBildirimAyarlari,
   yukleSehir,
-  kaydetSehir,
-  yukleUygulamaAyarlari,
-  kaydetUygulamaAyarlari,
 } from '../utils/storage';
 import { BildirimAyarlari, Sehir, UygulamaAyarlari } from '../types';
-import { SEHIRLER } from '../constants/sehirler';
+import { useSettings } from '../context/SettingsContext';
 import { temizleOrucVerileri } from '../utils/orucStorage';
 import { SaatSecici } from '../components/SaatSecici';
 import { useBildirimler } from '../hooks/useBildirimler';
 import { BackgroundDecor } from '../components/BackgroundDecor';
 import { konumdanSehirBul } from '../utils/konumServisi';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AyarlarScreen() {
-  const { sendTestNotification, getScheduledNotifications, bildirimleriAyarla } =
+  const { getScheduledNotifications, bildirimleriAyarla } =
     useBildirimler();
+  const navigation = useNavigation<any>();
+  const { uygulamaAyarlari, guncelleUygulamaAyarlari, sehir: contextSehir, guncelleSehir } = useSettings();
+  const tema = useTheme(); // Artık global ayarları otomatik dinler
 
   const [playingSound, setPlayingSound] = useState<string | null>(null);
 
@@ -41,10 +45,13 @@ export default function AyarlarScreen() {
     try {
       setPlayingSound(type);
       const soundFile = type === 'ney'
-        ? require('../../assets/ney.mp3')
+        ? require('../../assets/yunus_emre.mp3')
         : require('../../assets/ezan.mp3');
 
-      const { sound } = await Audio.Sound.createAsync(soundFile);
+      const { sound } = await Audio.Sound.createAsync(
+        soundFile,
+        { shouldPlay: true, positionMillis: type === 'ezan' ? 9000 : 0 }
+      );
       await sound.playAsync();
 
       sound.setOnPlaybackStatusUpdate((status) => {
@@ -60,9 +67,9 @@ export default function AyarlarScreen() {
     }
   };
 
+
   const [bildirimAyarlari, setBildirimAyarlari] = useState<BildirimAyarlari | null>(null);
-  const [uygulamaAyarlari, setUygulamaAyarlari] = useState<UygulamaAyarlari | null>(null);
-  const [sehir, setSehir] = useState<Sehir | null>(null);
+  const [sehir, setSehir] = useState<Sehir | null>(contextSehir);
   const [sehirModalVisible, setSehirModalVisible] = useState(false);
   const [sahurSaatModalVisible, setSahurSaatModalVisible] = useState(false);
   const [iftarSaatModalVisible, setIftarSaatModalVisible] = useState(false);
@@ -76,14 +83,12 @@ export default function AyarlarScreen() {
   const verileriYukle = async () => {
     try {
       setYukleniyor(true);
-      const [ayarlar, sehirData, uygulamaAyar] = await Promise.all([
+      const [ayarlar, sehirData] = await Promise.all([
         yukleBildirimAyarlari(),
         yukleSehir(),
-        yukleUygulamaAyarlari(),
       ]);
       setBildirimAyarlari(ayarlar);
       setSehir(sehirData);
-      setUygulamaAyarlari(uygulamaAyar);
     } catch (error) {
       console.error('Ayarlar yüklenirken hata:', error);
     } finally {
@@ -102,6 +107,37 @@ export default function AyarlarScreen() {
       setBildirimAyarlari(yeniAyarlar);
       await kaydetBildirimAyarlari(yeniAyarlar);
       await bildirimleriAyarla();
+
+      // Eğer bir özellik aktif edildiyse, bir sonraki bildirime ne kadar kaldığını göster
+      if (value === true && (key === 'abdestHatirlaticiAktif' || key === 'namazVakitleriAktif' || key === 'sahurAktif' || key === 'iftarAktif')) {
+        setTimeout(async () => {
+          const planli = await getScheduledNotifications();
+          if (planli.length > 0) {
+            // Şimdiki zamana en yakın olanı bul
+            const simdi = Date.now();
+            const gelecekBildirimler = planli
+              .map(n => {
+                const trigger = n.trigger as any;
+                return trigger.value || trigger.timestamp || trigger.date;
+              })
+              .filter(t => t > simdi)
+              .sort((a, b) => a - b);
+
+            if (gelecekBildirimler.length > 0) {
+              const farkMs = gelecekBildirimler[0] - simdi;
+              const toplamDakika = Math.floor(farkMs / (1000 * 60));
+              const saat = Math.floor(toplamDakika / 60);
+              const dakika = toplamDakika % 60;
+
+              let mesaj = 'Hatırlatıcı kuruldu: ';
+              if (saat > 0) mesaj += `${saat} saat `;
+              mesaj += `${dakika} dakika sonra ilk bildiriminiz gelecektir.`;
+
+              Alert.alert('✅ Bildirim Aktif', mesaj);
+            }
+          }
+        }, 1000); // Bildirimlerin planlanması için kısa bir süre bekle
+      }
     } catch (error) {
       console.error('Bildirim ayarı değiştirilemedi:', error);
       Alert.alert('Hata', 'Ayar kaydedilirken bir hata oluştu.');
@@ -116,9 +152,7 @@ export default function AyarlarScreen() {
     if (!uygulamaAyarlari) return;
 
     try {
-      const yeniAyarlar = { ...uygulamaAyarlari, [key]: value };
-      setUygulamaAyarlari(yeniAyarlar);
-      await kaydetUygulamaAyarlari(yeniAyarlar);
+      await guncelleUygulamaAyarlari({ [key]: value });
     } catch (error) {
       console.error('Uygulama ayarı değiştirilemedi:', error);
       Alert.alert('Hata', 'Ayar kaydedilirken bir hata oluştu.');
@@ -129,7 +163,7 @@ export default function AyarlarScreen() {
   const handleSehirSec = async (seciliSehir: Sehir) => {
     try {
       setSehir(seciliSehir);
-      await kaydetSehir(seciliSehir);
+      await guncelleSehir(seciliSehir);
       setSehirModalVisible(false);
       await bildirimleriAyarla();
       Alert.alert('Başarılı', 'Şehir güncellendi. Namaz vakitleri otomatik olarak güncellenecek.');
@@ -192,24 +226,52 @@ export default function AyarlarScreen() {
     <SafeAreaView style={styles.container}>
       <BackgroundDecor />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>⚙️ Ayarlar</Text>
+        <Text style={styles.title}>Ayarlar</Text>
 
         {/* Hata Ayıklama / Test - Sadece geliştirme/test için */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>🛠️ Hata Ayıklama</Text>
           <TouchableOpacity
             style={[styles.ayarItem, { backgroundColor: '#e8f5e9' }]}
-            onPress={async () => {
-              const success = await sendTestNotification();
-              if (success) {
-                Alert.alert('Test', '3 saniye içinde bildirim gelecek. Gelmezse lütfen bildirim izinlerini kontrol edin.');
-              }
-            }}
+            onPress={() => navigation.navigate('BildirimTest')}
           >
             <Text style={[styles.ayarItemText, { color: '#2e7d32', fontWeight: 'bold' }]}>
-              🔔 Bildirimleri Test Et
+              🔔 Bildirim Paneli
             </Text>
           </TouchableOpacity>
+
+          <View style={{ flexDirection: 'row', gap: 10, padding: 10 }}>
+            <TouchableOpacity
+              style={[
+                styles.testButon,
+                { backgroundColor: ISLAMI_RENKLER.arkaPlanYesil, flex: 1 },
+                uygulamaAyarlari?.temaTercih === 'gunduz' && styles.seciliButon
+              ]}
+              onPress={() => guncelleUygulamaAyarlari({ temaTercih: 'gunduz' })}
+            >
+              <Text style={styles.testButonText}>☀️ Gündüz</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.testButon,
+                { backgroundColor: '#05111A', flex: 1, borderWidth: 1, borderColor: '#DFBD69' },
+                uygulamaAyarlari?.temaTercih === 'gece' && styles.seciliButon
+              ]}
+              onPress={() => guncelleUygulamaAyarlari({ temaTercih: 'gece' })}
+            >
+              <Text style={styles.testButonText}>🌙 Gece</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.testButon,
+                { backgroundColor: '#78909c', flex: 1 },
+                uygulamaAyarlari?.temaTercih === 'otomatik' && styles.seciliButon
+              ]}
+              onPress={() => guncelleUygulamaAyarlari({ temaTercih: 'otomatik' })}
+            >
+              <Text style={styles.testButonText}>🔄 Otomatik</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={styles.ayarItem}
             onPress={async () => {
@@ -224,7 +286,7 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Şehir Seçimi */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>📍 Şehir Seçimi</Text>
 
           {/* Konumdan Şehir Bul Butonu */}
@@ -263,20 +325,15 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Bildirim Ayarları */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>🔔 Bildirim Ayarları</Text>
 
           <View style={styles.switchItem}>
             <View style={styles.switchItemLeft}>
               <Text style={styles.switchLabel}>Sahur Hatırlatıcısı</Text>
-              <TouchableOpacity
-                onPress={() => setSahurSaatModalVisible(true)}
-                style={styles.saatButonu}
-              >
-                <Text style={styles.saatButonuText}>
-                  {bildirimAyarlari.sahurSaat}
-                </Text>
-              </TouchableOpacity>
+              <Text style={styles.switchAltLabel}>
+                İmsak vaktinden 45 dakika önce hatırlat
+              </Text>
             </View>
             <Switch
               value={bildirimAyarlari.sahurAktif}
@@ -286,7 +343,7 @@ export default function AyarlarScreen() {
               }}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -312,7 +369,7 @@ export default function AyarlarScreen() {
               }}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -333,33 +390,55 @@ export default function AyarlarScreen() {
               }}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
           </View>
 
           {bildirimAyarlari.namazVakitleriAktif && (
-            <View style={styles.switchItem}>
-              <View>
-                <Text style={styles.switchLabel}>Ezan Sesi</Text>
-                <Text style={styles.switchAltLabel}>
-                  Namaz vakitlerinde ezan sesi çal
-                </Text>
+            <>
+              <View style={styles.switchItem}>
+                <View>
+                  <Text style={styles.switchLabel}>Abdest Hatırlatıcısı</Text>
+                  <Text style={styles.switchAltLabel}>
+                    Ezanlardan 10 dakika önce güçlü titreşimle uyar
+                  </Text>
+                </View>
+                <Switch
+                  value={bildirimAyarlari.abdestHatirlaticiAktif}
+                  onValueChange={async (value) => {
+                    await handleBildirimAyarDegistir('abdestHatirlaticiAktif', value);
+                  }}
+                  trackColor={{
+                    false: 'rgba(255, 255, 255, 0.3)',
+                    true: ISLAMI_RENKLER.yesilParlak,
+                  }}
+                  thumbColor={ISLAMI_RENKLER.yaziBeyaz}
+                />
               </View>
-              <Switch
-                value={bildirimAyarlari.ezanSesiAktif ?? true}
-                onValueChange={async (value) => {
-                  await handleBildirimAyarDegistir('ezanSesiAktif', value);
-                  await bildirimleriAyarla();
-                }}
-                trackColor={{
-                  false: 'rgba(255, 255, 255, 0.3)',
-                  true: ISLAMI_RENKLER.altinOrta,
-                }}
-                thumbColor={ISLAMI_RENKLER.yaziBeyaz}
-              />
-            </View>
+
+              <View style={styles.switchItem}>
+                <View>
+                  <Text style={styles.switchLabel}>Ezan Sesi</Text>
+                  <Text style={styles.switchAltLabel}>
+                    Namaz vakitlerinde ezan sesi çal
+                  </Text>
+                </View>
+                <Switch
+                  value={bildirimAyarlari.ezanSesiAktif ?? true}
+                  onValueChange={async (value) => {
+                    await handleBildirimAyarDegistir('ezanSesiAktif', value);
+                    await bildirimleriAyarla();
+                  }}
+                  trackColor={{
+                    false: 'rgba(255, 255, 255, 0.3)',
+                    true: ISLAMI_RENKLER.yesilParlak,
+                  }}
+                  thumbColor={ISLAMI_RENKLER.yaziBeyaz}
+                />
+              </View>
+            </>
           )}
 
           <View style={styles.switchItem}>
@@ -376,7 +455,7 @@ export default function AyarlarScreen() {
               }
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -392,7 +471,7 @@ export default function AyarlarScreen() {
               {playingSound === 'ney' ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.debugButonText}>🪙 Ney Sesi Test Et</Text>
+                <Text style={styles.debugButonText}>🕌 Yunus Emre Sesi Test Et</Text>
               )}
             </TouchableOpacity>
 
@@ -411,7 +490,7 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Veri Yönetimi */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>🗑️ Veri Yönetimi</Text>
           <TouchableOpacity style={styles.sifirlaButonu} onPress={handleVeriSifirla}>
             <Text style={styles.sifirlaButonuText}>Tüm Verileri Sıfırla</Text>
@@ -419,7 +498,7 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Widget Ayarları */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>📱 Widget Ayarları</Text>
 
           <View style={styles.switchItem}>
@@ -434,7 +513,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('widgetAktif', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -452,7 +531,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('widgetKilitEkraniAktif', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -472,7 +551,7 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Görünüm ve Erişilebilirlik */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>👁️ Görünüm ve Erişilebilirlik</Text>
 
           <View style={styles.bilgiKutusu}>
@@ -520,7 +599,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('arapcaYaziGoster', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -529,7 +608,7 @@ export default function AyarlarScreen() {
 
 
         {/* Kıble Ayarları */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>🧭 Kıble Ayarları</Text>
 
           <View style={styles.switchItem}>
@@ -544,7 +623,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('kibleTitresimAktif', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -560,7 +639,7 @@ export default function AyarlarScreen() {
         </View>
 
         {/* Uygulama Ayarları */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>⚙️ Uygulama Ayarları</Text>
 
           <TouchableOpacity
@@ -602,7 +681,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('otomatikKonum', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -621,7 +700,7 @@ export default function AyarlarScreen() {
               onValueChange={(value) => handleUygulamaAyarDegistir('ekraniAcikTut', value)}
               trackColor={{
                 false: 'rgba(255, 255, 255, 0.3)',
-                true: ISLAMI_RENKLER.altinOrta,
+                true: ISLAMI_RENKLER.yesilParlak,
               }}
               thumbColor={ISLAMI_RENKLER.yaziBeyaz}
             />
@@ -630,16 +709,25 @@ export default function AyarlarScreen() {
 
 
         {/* Hakkında */}
-        <View style={styles.ayarBolumu}>
+        <View style={[styles.ayarBolumu, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20` }]}>
           <Text style={styles.ayarBaslik}>ℹ️ Hakkında</Text>
           <Text style={styles.hakkindaText}>
             Şükür365 - Günlük Manevi Takip{'\n'}
-            Versiyon: 1.0.0{'\n'}
+            Versiyon: 1.0.30{'\n'}
             2026{'\n\n'}
             Bu uygulama, oruç tutmanızı takip etmenize,
             namaz vakitlerini öğrenmenize ve dini içeriklerle manevi yolculuğunuzu
             zenginleştirmenize yardımcı olmak için tasarlanmıştır.{'\n\n'}
-            {'\n'}
+            <Text style={{ fontWeight: 'bold', color: tema.vurgu }}>
+              📧 İletişim / Tavsiye / Şikayet{'\n'}
+            </Text>
+            Her türlü görüşünüz için: {' '}
+            <Text
+              style={{ color: tema.vurgu, textDecorationLine: 'underline' }}
+              onPress={() => Linking.openURL('mailto:nzhdrtsz034@gmail.com')}
+            >
+              nzhdrtsz034@gmail.com
+            </Text>{'\n\n'}
             <Text style={{ fontWeight: 'bold', color: '#1a5f3f' }}>
               💚 Allah Rızası İçin{'\n'}
             </Text>
@@ -828,6 +916,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     fontFamily: TYPOGRAPHY.body,
+  },
+  hataText: {
+    fontSize: 14,
+    color: ISLAMI_RENKLER.kirmiziYumusak,
+    textAlign: 'center',
+    fontFamily: TYPOGRAPHY.body,
+  },
+  testButon: {
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  testButonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  seciliButon: {
+    borderWidth: 2,
+    borderColor: '#DFBD69',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   hakkindaText: {
     fontSize: 14,

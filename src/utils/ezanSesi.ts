@@ -1,16 +1,18 @@
-import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 
 /**
  * Ezan sesi çalma yardımcı fonksiyonları
- * Expo AV kullanarak daha güvenilir ses çalma
+ * 
+ * NOT: Bildirim geldiğinde ezan sesi artık OS notification sound olarak çalıyor
+ * (Android: notification channel sound, iOS: notification sound)
+ * Bu fonksiyonlar sadece in-app preview/test için kullanılıyor.
  */
 
 let sound: Audio.Sound | null = null;
-let listener: Notifications.Subscription | null = null;
 
 /**
- * Ezan sesini çalar
+ * Ezan sesini çalar (in-app preview/test için)
+ * Bildirim geldiğinde otomatik çalmaz - OS notification sound kullanılıyor
  */
 export async function ezanSesiCal(): Promise<void> {
   try {
@@ -29,7 +31,7 @@ export async function ezanSesiCal(): Promise<void> {
     // Yerel ezan sesi dosyasını yükle
     const { sound: newSound } = await Audio.Sound.createAsync(
       require('../../assets/yunus_emre.mp3'),
-      { shouldPlay: true, volume: 1.0 }
+      { shouldPlay: true, volume: 1.0, positionMillis: 9000 }
     );
 
     sound = newSound;
@@ -69,34 +71,5 @@ export async function ezanSesiDurdur(): Promise<void> {
   }
 }
 
-/**
- * Bildirim geldiğinde ezan sesi çal
- */
-export function bildirimEzanSesiBaslat(): void {
-  // Önceki listener varsa kaldır
-  if (listener) {
-    listener.remove();
-    listener = null;
-  }
-
-  // Bildirim listener'ı ekle
-  listener = Notifications.addNotificationReceivedListener(async (notification) => {
-    const ezanSesi = notification.request.content.data?.ezanSesi;
-
-    // Eğer bu bir namaz vakti bildirimi ve ezan sesi aktifse
-    if (ezanSesi && notification.request.content.title?.includes('Namazı Vakti')) {
-      await ezanSesiCal();
-    }
-  });
-}
-
-/**
- * Ezan sesi listener'ını temizle
- */
-export function bildirimEzanSesiTemizle(): void {
-  if (listener) {
-    listener.remove();
-    listener = null;
-  }
-  ezanSesiDurdur();
-}
+// NOT: bildirimEzanSesiBaslat ve bildirimEzanSesiTemizle fonksiyonları kaldırıldı
+// Çünkü artık OS notification sound kullanılıyor (app kapalıyken de çalışır)

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Dua } from '../types';
 import { ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
+import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../hooks/useTheme';
 
 interface DuaKartProps {
   dua: Dua;
@@ -14,11 +16,13 @@ interface DuaKartProps {
  */
 export const DuaKart: React.FC<DuaKartProps> = ({ dua, onFavoriToggle }) => {
   const [genisletildi, setGenisletildi] = useState(false);
+  const { yaziBoyutuCarpani } = useSettings();
+  const tema = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.glassBackground }]}>
       <View style={styles.header}>
-        <Text style={styles.baslik}>{dua.baslik}</Text>
+        <Text style={[styles.baslik, { fontSize: 22 * yaziBoyutuCarpani }]}>{dua.baslik}</Text>
         {onFavoriToggle && (
           <TouchableOpacity onPress={() => onFavoriToggle(dua.id)}>
             <Text style={styles.favoriIcon}>
@@ -30,19 +34,19 @@ export const DuaKart: React.FC<DuaKartProps> = ({ dua, onFavoriToggle }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.arapcaContainer}>
-          <Text style={styles.arapca}>{dua.arapca}</Text>
+          <Text style={[styles.arapca, { fontSize: 18 * yaziBoyutuCarpani }]}>{dua.arapca}</Text>
         </View>
 
         {dua.turkceOkunus && (
           <View style={styles.okunusContainer}>
-            <Text style={styles.okunusLabel}>Okunuş:</Text>
-            <Text style={styles.okunus}>{dua.turkceOkunus}</Text>
+            <Text style={[styles.okunusLabel, { fontSize: 12 * yaziBoyutuCarpani }]}>Okunuş:</Text>
+            <Text style={[styles.okunus, { fontSize: 15 * yaziBoyutuCarpani }]}>{dua.turkceOkunus}</Text>
           </View>
         )}
 
         <View style={styles.anlamContainer}>
-          <Text style={styles.anlamLabel}>Anlam:</Text>
-          <Text style={styles.anlam}>{dua.turkceAnlam}</Text>
+          <Text style={[styles.anlamLabel, { fontSize: 12 * yaziBoyutuCarpani }]}>Anlam:</Text>
+          <Text style={[styles.anlam, { fontSize: 16 * yaziBoyutuCarpani, lineHeight: 16 * yaziBoyutuCarpani * 1.5 }]}>{dua.turkceAnlam}</Text>
         </View>
 
         {dua.kaynak && (
@@ -70,11 +74,17 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderWidth: 1,
     borderColor: ISLAMI_RENKLER.glassBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
     overflow: 'hidden',
   },
   header: {
@@ -144,9 +154,7 @@ const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.body,
   },
   anlam: {
-    fontSize: 16,
     color: ISLAMI_RENKLER.yaziBeyaz,
-    lineHeight: 24,
     fontFamily: TYPOGRAPHY.body,
   },
   kaynak: {

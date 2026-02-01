@@ -4,7 +4,7 @@ import { EkstraScreenLayout } from '../../components/EkstraScreenLayout';
 import { ekstraStiller } from './ekstraStyles';
 import { IFTAR_MENU_KATEGORILERI } from '../../constants/iftarMenuleri';
 
-interface IftarMenuOnerileriScreenProps {}
+interface IftarMenuOnerileriScreenProps { }
 
 interface IftarMenuSecimi {
   id: string;
@@ -31,7 +31,7 @@ export default function IftarMenuOnerileriScreen(_props: IftarMenuOnerileriScree
   };
 
   return (
-    <EkstraScreenLayout baslik="💡 İftar Menü Önerileri">
+    <EkstraScreenLayout baslik="💡 İftar Menü Önerileri" geriDonHedef="AraclarMain">
       <View style={ekstraStiller.bolum}>
         <View style={ekstraStiller.bolumHeader}>
           <Text style={ekstraStiller.bolumBaslik}>Günlük Öneriler</Text>

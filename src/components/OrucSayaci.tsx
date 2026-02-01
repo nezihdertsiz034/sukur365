@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Animated, Platform } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { NamazVakitleri } from '../types';
 import { saniyeToZaman } from '../utils/namazVakitleri';
-import { ISLAMI_RENKLER } from '../constants/renkler';
+import { ISLAMI_RENKLER, TEMA_RENKLERI } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
 import { getSukurAyetiByGun, SukurAyeti } from '../constants/sukurAyetleri';
 import { useOrucZinciri } from '../hooks/useOrucZinciri';
+import { useSettings } from '../context/SettingsContext';
 
 
 
@@ -21,6 +22,17 @@ interface OrucSayaciProps {
  */
 export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = false }) => {
   const { zincirHalkalari } = useOrucZinciri();
+  const { yaziBoyutuCarpani } = useSettings();
+
+  // Dinamik Tema Hesaplama
+  const tema = React.useMemo(() => {
+    const saat = new Date().getHours();
+    if (saat >= 5 && saat < 11) return TEMA_RENKLERI.SABAH;
+    if (saat >= 11 && saat < 18) return TEMA_RENKLERI.GUN;
+    if (saat >= 18 && saat < 22) return TEMA_RENKLERI.AKSAM;
+    return TEMA_RENKLERI.GECE;
+  }, []);
+
   const [kalanSure, setKalanSure] = useState<number | null>(null);
   const [durum, setDurum] = useState<'beklemede' | 'devam' | 'bitti'>('beklemede');
   const [gununAyeti, setGununAyeti] = useState<SukurAyeti | null>(null);
@@ -157,13 +169,13 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
   const strokeDashoffset = circumference - (progressYuzde / 100) * circumference;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(0,0,0,0.4)' : ISLAMI_RENKLER.glassBackground }]}>
       {/* Başlık */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerEmoji}>
           {durum === 'beklemede' ? '🌙' : durum === 'devam' ? '☀️' : '✨'}
         </Text>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { fontSize: 24 * yaziBoyutuCarpani }]}>
           {durum === 'beklemede' ? 'Sahura Kalan' : durum === 'devam' ? 'İftara Kalan' : 'Oruç Tamamlandı!'}
         </Text>
       </View>
@@ -172,8 +184,8 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
         <>
           {/* Ana Sayaç Kartı */}
           <Animated.View style={[styles.sayacKart, { transform: [{ scale: pulseAnim }] }]}>
-            {/* Glow efekti */}
-            <Animated.View style={[styles.glowEffect, { opacity: glowAnim }]} />
+            {/* Glow efekti - Dinamik Renk */}
+            <Animated.View style={[styles.glowEffect, { opacity: glowAnim, backgroundColor: tema.ikincil }]} />
 
             {/* SVG Circular Progress */}
             <View style={styles.circleContainer}>
@@ -195,7 +207,22 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
                   strokeWidth="8"
                 />
 
-                {/* Progress dairesi */}
+                {/* Progress dairesi Glow (Arka Plan) */}
+                <Circle
+                  cx="110"
+                  cy="110"
+                  r={circleRadius}
+                  fill="none"
+                  stroke="url(#progressGradient)"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  transform="rotate(-90, 110, 110)"
+                  opacity={0.3}
+                />
+
+                {/* Ana Progress dairesi */}
                 <Circle
                   cx="110"
                   cy="110"
@@ -226,18 +253,18 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
                 <Text style={styles.arabicAllah}>الله</Text>
                 <View style={styles.timeContainer}>
                   <View style={styles.timeBlock}>
-                    <Text style={styles.timeNumber}>{String(zaman.saat).padStart(2, '0')}</Text>
-                    <Text style={styles.timeLabel}>saat</Text>
+                    <Text style={[styles.timeNumber, { fontSize: 34 * yaziBoyutuCarpani }]}>{String(zaman.saat).padStart(2, '0')}</Text>
+                    <Text style={[styles.timeLabel, { fontSize: 10 * yaziBoyutuCarpani }]}>SAAT</Text>
                   </View>
-                  <Text style={styles.timeSeparator}>:</Text>
+                  <Text style={[styles.timeSeparator, { fontSize: 28 * yaziBoyutuCarpani }]}>:</Text>
                   <View style={styles.timeBlock}>
-                    <Text style={styles.timeNumber}>{String(zaman.dakika).padStart(2, '0')}</Text>
-                    <Text style={styles.timeLabel}>dakika</Text>
+                    <Text style={[styles.timeNumber, { fontSize: 34 * yaziBoyutuCarpani }]}>{String(zaman.dakika).padStart(2, '0')}</Text>
+                    <Text style={[styles.timeLabel, { fontSize: 10 * yaziBoyutuCarpani }]}>DAKİKA</Text>
                   </View>
-                  <Text style={styles.timeSeparator}>:</Text>
+                  <Text style={[styles.timeSeparator, { fontSize: 28 * yaziBoyutuCarpani }]}>:</Text>
                   <View style={styles.timeBlock}>
-                    <Text style={[styles.timeNumber, styles.secondsNumber]}>{String(zaman.saniye).padStart(2, '0')}</Text>
-                    <Text style={styles.timeLabel}>saniye</Text>
+                    <Text style={[styles.timeNumber, styles.secondsNumber, { fontSize: 34 * yaziBoyutuCarpani, color: tema.vurgu }]}>{String(zaman.saniye).padStart(2, '0')}</Text>
+                    <Text style={[styles.timeLabel, { fontSize: 10 * yaziBoyutuCarpani }]}>SANİYE</Text>
                   </View>
                 </View>
               </View>
@@ -260,8 +287,8 @@ export const OrucSayaci: React.FC<OrucSayaciProps> = ({ vakitler, yukleniyor = f
 
             <View style={styles.vakitItem}>
               <Text style={styles.vakitEmoji}>🌅</Text>
-              <Text style={styles.vakitLabel}>İftar</Text>
-              <Text style={styles.vakitSaat}>{vakitler.aksam}</Text>
+              <Text style={[styles.vakitLabel, { fontSize: 12 * yaziBoyutuCarpani }]}>İftar</Text>
+              <Text style={[styles.vakitSaat, { fontSize: 22 * yaziBoyutuCarpani, color: tema.vurgu }]}>{vakitler.aksam}</Text>
             </View>
           </View>
         </>
@@ -308,11 +335,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: ISLAMI_RENKLER.glassBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
     overflow: 'hidden',
   },
   yukleniyorText: {
@@ -337,11 +370,12 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontFamily: TYPOGRAPHY.display,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   // Sayaç Kartı
   sayacKart: {
@@ -355,7 +389,7 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: 120,
-    backgroundColor: ISLAMI_RENKLER.altinOrta,
+    backgroundColor: ISLAMI_RENKLER.yesilParlak,
     opacity: 0.15,
   },
   circleContainer: {
@@ -373,13 +407,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   arabicAllah: {
-    fontSize: 36,
-    color: ISLAMI_RENKLER.altinAcik,
+    fontSize: 34,
+    color: ISLAMI_RENKLER.yaziBeyaz,
     fontWeight: '400',
-    marginBottom: 4,
-    textShadowColor: 'rgba(218, 165, 32, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    marginBottom: 0,
+    textShadowColor: 'rgba(255, 255, 255, 0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+    opacity: 0.9,
   },
   centerIcon: {
     fontSize: 32,
@@ -394,27 +429,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeNumber: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 34,
+    fontWeight: '900',
     color: ISLAMI_RENKLER.yaziBeyaz,
     fontFamily: TYPOGRAPHY.display,
-    letterSpacing: 1,
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   secondsNumber: {
-    color: ISLAMI_RENKLER.altinAcik,
+    color: ISLAMI_RENKLER.yesilParlak,
+    textShadowColor: 'rgba(102, 187, 106, 0.5)',
   },
   timeLabel: {
-    fontSize: 9,
+    fontSize: 10,
     color: ISLAMI_RENKLER.yaziBeyazYumusak,
     textTransform: 'uppercase',
     fontFamily: TYPOGRAPHY.body,
-    marginTop: 2,
+    marginTop: 4,
+    fontWeight: '700',
+    letterSpacing: 1,
+    opacity: 0.8,
   },
   timeSeparator: {
     fontSize: 28,
-    fontWeight: '300',
-    color: ISLAMI_RENKLER.altinOrta,
-    marginHorizontal: 6,
+    fontWeight: '200',
+    color: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 4,
     marginTop: 2,
   },
   // Vakit Bilgileri - Yeni Tasarım
@@ -447,10 +489,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   vakitSaat: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: ISLAMI_RENKLER.altinAcik,
+    fontSize: 22,
+    fontWeight: '900',
+    color: ISLAMI_RENKLER.yesilParlak,
     fontFamily: TYPOGRAPHY.display,
+    textShadowColor: 'rgba(102, 187, 106, 0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   vakitDivider: {
     flexDirection: 'column',
@@ -460,7 +505,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     width: 1,
     height: 16,
-    backgroundColor: 'rgba(218, 165, 32, 0.3)',
+    backgroundColor: ISLAMI_RENKLER.yesilParlak + '40',
   },
   dividerIcon: {
     fontSize: 16,

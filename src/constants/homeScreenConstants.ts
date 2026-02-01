@@ -24,16 +24,51 @@ export const HADISLER = [
 
 // Hızlı erişim kartları - Satır 1 (4 adet)
 export const HIZLI_ERISIM_1 = [
-    { id: 'tesbih', baslik: 'Tesbih', ikon: '📿', tab: 'Takip', screen: 'TesbihSayaci', renk: '#FFD700' },
-    { id: 'dualar', baslik: 'Dualar', ikon: '🤲', tab: 'İbadet', screen: 'DualarMain', renk: '#90EE90' },
-    { id: 'kible', baslik: 'Kıble', ikon: '🧭', tab: 'Araçlar', screen: 'Kıble', renk: '#87CEEB' },
-    { id: 'esma', baslik: 'Esmaül Hüsna', ikon: '☪️', tab: 'İbadet', screen: 'EsmaulHusna', renk: '#DDA0DD' },
+    { id: 'tesbih', baslik: 'Tesbih', resim: 'tesbih.png', tab: 'Takip', screen: 'TesbihSayaci', renk: '#FFD700' },
+    { id: 'dualar', baslik: 'Dualar', resim: 'dualar.png', tab: 'Kur\'an', screen: 'Dualar', renk: '#90EE90' },
+    { id: 'kible', baslik: 'Kıble', resim: 'kible.png', tab: 'Araçlar', screen: 'Kıble', renk: '#87CEEB' },
+    { id: 'esma', baslik: 'Esmaül Hüsna', resim: 'dualar.png', tab: 'Kur\'an', screen: 'EsmaulHusna', renk: '#DDA0DD' },
 ];
 
 // Hızlı erişim kartları - Satır 2 (4 adet) 
 export const HIZLI_ERISIM_2 = [
-    { id: 'peygamber', baslik: 'Hz. Muhammed (S.A.V.)', ikon: '🌙', tab: 'İbadet', screen: 'PeygamberHayati', renk: '#98FB98' },
-    { id: 'kuran', baslik: 'Kur\'an-ı Kerim', ikon: '📖', tab: 'İbadet', screen: 'KuranKerim', renk: '#2C5F2D' },
-    { id: 'zekat', baslik: 'Zekat', ikon: '💰', tab: 'Araçlar', screen: 'Zekat', renk: '#F0E68C' },
-    { id: 'istatistik', baslik: 'İstatistikler', ikon: '📊', tab: 'Takip', screen: 'IstatistiklerMain', renk: '#B0C4DE' },
+    { id: 'peygamber', baslik: 'Hz. Muhammed (S.A.V.)', resim: 'medine.png', tab: 'Kur\'an', screen: 'PeygamberHayati', renk: '#98FB98' },
+    { id: 'kuran', baslik: 'Kur\'an-ı Kerim', resim: 'kuran.png', tab: 'Kur\'an', screen: 'KuranMain', renk: '#2C5F2D' },
+    { id: 'zekat', baslik: 'Zekat', resim: 'zekat.png', tab: 'Araçlar', screen: 'Zekat', renk: '#F0E68C' },
+    { id: 'istatistik', baslik: 'İstatistikler', resim: 'stats.png', tab: 'Takip', screen: 'IstatistiklerMain', renk: '#B0C4DE' },
+];
+
+export const MOOD_VERILERI = [
+    {
+        id: 'peaceful',
+        etiket: 'Huzurlu',
+        ikon: require('../../assets/icons/mood_peaceful.png'),
+        ayet: '“Bilesiniz ki, kalpler ancak Allah’ı anmakla huzur bulur.” (Ra’d, 28)',
+        dua: 'Allah’ım, gönlüme inşirah ver, işimi kolaylaştır.',
+        renk: '#4CAF50'
+    },
+    {
+        id: 'sad',
+        etiket: 'Üzgün',
+        ikon: require('../../assets/icons/mood_sad.png'),
+        ayet: '“Gevşemeyin, hüzünlenmeyin; eğer inanmışsanız en üstün olan sizsiniz.” (Âl-i İmrân, 139)',
+        dua: 'Ya Rabbi, kederimi ve hüznümü sana arz ediyorum, bana ferahlık ver.',
+        renk: '#2196F3'
+    },
+    {
+        id: 'stressed',
+        etiket: 'Stresli',
+        ikon: require('../../assets/icons/mood_stressed.png'),
+        ayet: '“Allah, hiç kimseye gücünün üstünde bir şey yüklemez.” (Bakara, 286)',
+        dua: 'Allah’ım, sabrımı artır ve kalbime sükunet indir.',
+        renk: '#FF9800'
+    },
+    {
+        id: 'grateful',
+        etiket: 'Şükür Dolu',
+        ikon: require('../../assets/icons/mood_grateful.png'),
+        ayet: '“Eğer şükrederseniz, elbette size (nimetimi) artırırım.” (İbrâhim, 7)',
+        dua: 'Verdiğin nimetler için sana sonsuz şükürler olsun ya Rabbi.',
+        renk: '#FFD700'
+    }
 ];

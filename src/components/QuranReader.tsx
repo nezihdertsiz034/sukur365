@@ -1,14 +1,9 @@
-/**
- * Kur'an Okuma Component'i
- * 
- * Arapça metin + Türkçe meal gösterir
- * Kitap formatında, baştan sona okuma
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { QuranAyah } from '../types/quran';
-import { KURAN_RENKLER } from '../constants/renkler';
+import { KURAN_RENKLER, ISLAMI_RENKLER } from '../constants/renkler';
 import { TYPOGRAPHY } from '../constants/typography';
 
 interface QuranReaderProps {
@@ -40,119 +35,116 @@ export function QuranReader({
     const getFontSize = () => {
         switch (fontSize) {
             case 'kucuk':
-                return { arabic: 22, turkish: 14, ayahNumber: 12, lineHeigh: 36 };
+                return { arabic: 22, turkish: 14, ayahNumber: 12, arabicLineHeight: 38, turkishLineHeight: 22 };
             case 'buyuk':
-                return { arabic: 30, turkish: 18, ayahNumber: 14, lineHeigh: 48 };
+                return { arabic: 32, turkish: 18, ayahNumber: 14, arabicLineHeight: 52, turkishLineHeight: 28 };
             case 'cokbuyuk':
-                return { arabic: 34, turkish: 22, ayahNumber: 16, lineHeigh: 54 };
+                return { arabic: 36, turkish: 22, ayahNumber: 16, arabicLineHeight: 58, turkishLineHeight: 34 };
             case 'dev':
-                return { arabic: 42, turkish: 26, ayahNumber: 18, lineHeigh: 64 };
+                return { arabic: 44, turkish: 26, ayahNumber: 18, arabicLineHeight: 68, turkishLineHeight: 40 };
             case 'yasli':
-                return { arabic: 50, turkish: 32, ayahNumber: 20, lineHeigh: 72 };
+                return { arabic: 52, turkish: 32, ayahNumber: 20, arabicLineHeight: 76, turkishLineHeight: 48 };
             case 'normal':
             default:
-                return { arabic: 26, turkish: 16, ayahNumber: 13, lineHeigh: 42 };
+                return { arabic: 28, turkish: 16, ayahNumber: 13, arabicLineHeight: 46, turkishLineHeight: 26 };
         }
     };
 
     const fonts = getFontSize();
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {/* Sure Başlığı */}
-            <View style={styles.surahHeader}>
-                <Text style={styles.surahNumber}>Sure {currentSurahNumber}</Text>
-                <Text style={styles.surahName}>{currentSurahName}</Text>
-                <View style={styles.divider} />
-            </View>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {/* Sure Başlığı - Gradient Kart */}
+            <LinearGradient
+                colors={[ISLAMI_RENKLER.yesilKoyu, ISLAMI_RENKLER.yesilOrta]}
+                style={styles.surahHeaderGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            >
+                <View style={styles.surahHeaderOverlay}>
+                    <Text style={styles.surahNumberText}>SURAH {currentSurahNumber}</Text>
+                    <Text style={styles.surahNameLarge}>{currentSurahName}</Text>
+                    <View style={styles.headerDivider} />
+                </View>
+            </LinearGradient>
 
-            {/* Besmele (Tevbe suresi hariç) */}
+            {/* Besmele Kartı */}
             {currentSurahNumber !== 9 && currentSurahNumber !== 1 && (
-                <View style={styles.besmeleContainer}>
-                    <Text style={[styles.arabicText, { fontSize: fonts.arabic }]}>
+                <View style={[styles.card, styles.besmeleCard]}>
+                    <Text style={[styles.arabicText, styles.besmeleText, { fontSize: fonts.arabic + 2 }]}>
                         بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
                     </Text>
                 </View>
             )}
 
-            {/* Ayetler */}
+            {/* Ayetler - Kart Yapısı */}
             {arabicAyahs.map((arabicAyah, index) => {
                 const turkishAyah = turkishAyahs[index];
                 const isBookmarked = bookmarkedAyahs.includes(arabicAyah.number);
                 const isFavorite = favoriteAyahs.includes(arabicAyah.number);
 
                 return (
-                    <View key={arabicAyah.number} style={styles.ayahContainer}>
-                        {/* Arapça Metin */}
-                        <Text style={[styles.arabicText, { fontSize: fonts.arabic, lineHeight: fonts.lineHeigh }]}>
-                            {arabicAyah.text}
-                        </Text>
-
-                        {/* Türkçe Meal */}
-                        <Text style={[styles.turkishText, { fontSize: fonts.turkish }]}>
-                            {turkishAyah.text}
-                        </Text>
-
-                        {/* Ayet Bilgileri ve Aksiyonlar */}
-                        <View style={styles.ayahFooter}>
-                            {/* Ayet Numarası */}
-                            <View style={styles.ayahNumberContainer}>
-                                <Text style={[styles.ayahNumber, { fontSize: fonts.ayahNumber }]}>
-                                    {arabicAyah.numberInSurah}
-                                </Text>
+                    <View key={arabicAyah.number} style={styles.ayahCard}>
+                        {/* Sol tarafta Ayet numarası ve Süslemesi */}
+                        <View style={styles.cardHeader}>
+                            <View style={styles.ayahBadge}>
+                                <Text style={styles.ayahBadgeText}>{arabicAyah.numberInSurah}</Text>
                             </View>
 
-                            {/* Aksiyon Butonları */}
                             <View style={styles.actionButtons}>
-                                {/* Bookmark */}
-                                {onBookmark && (
-                                    <TouchableOpacity
-                                        onPress={() => onBookmark(arabicAyah.number, arabicAyah.numberInSurah)}
-                                        style={styles.actionButton}
-                                    >
-                                        <Text style={[
-                                            styles.actionIcon,
-                                            isBookmarked && styles.actionIconActive
-                                        ]}>
-                                            {isBookmarked ? '🔖' : '📑'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity
+                                    onPress={() => onBookmark?.(arabicAyah.number, arabicAyah.numberInSurah)}
+                                    style={styles.actionButton}
+                                >
+                                    <Ionicons
+                                        name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                                        size={22}
+                                        color={isBookmarked ? KURAN_RENKLER.bookmarkActive : KURAN_RENKLER.turkceMealAcik}
+                                    />
+                                </TouchableOpacity>
 
-                                {/* Favorite */}
-                                {onFavorite && (
-                                    <TouchableOpacity
-                                        onPress={() => onFavorite(arabicAyah.number)}
-                                        style={styles.actionButton}
-                                    >
-                                        <Text style={[
-                                            styles.actionIcon,
-                                            isFavorite && styles.actionIconActive
-                                        ]}>
-                                            {isFavorite ? '❤️' : '🤍'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity
+                                    onPress={() => onFavorite?.(arabicAyah.number)}
+                                    style={styles.actionButton}
+                                >
+                                    <Ionicons
+                                        name={isFavorite ? "heart" : "heart-outline"}
+                                        size={22}
+                                        color={isFavorite ? KURAN_RENKLER.favoriteActive : KURAN_RENKLER.turkceMealAcik}
+                                    />
+                                </TouchableOpacity>
 
-                                {/* Share */}
-                                {onShare && (
-                                    <TouchableOpacity
-                                        onPress={() => onShare(arabicAyah.number)}
-                                        style={styles.actionButton}
-                                    >
-                                        <Text style={styles.actionIcon}>📤</Text>
-                                    </TouchableOpacity>
-                                )}
+                                <TouchableOpacity
+                                    onPress={() => onShare?.(arabicAyah.number)}
+                                    style={styles.actionButton}
+                                >
+                                    <Ionicons name="share-social-outline" size={22} color={KURAN_RENKLER.turkceMealAcik} />
+                                </TouchableOpacity>
                             </View>
                         </View>
 
-                        {/* Ayırıcı Çizgi */}
-                        {index < arabicAyahs.length - 1 && <View style={styles.ayahDivider} />}
+                        {/* Arapça Metin - Modern Hat Ayarı */}
+                        <Text style={[
+                            styles.arabicText,
+                            {
+                                fontSize: fonts.arabic,
+                                lineHeight: fonts.arabicLineHeight,
+                                color: ISLAMI_RENKLER.yesilKoyu
+                            }
+                        ]}>
+                            {arabicAyah.text}
+                        </Text>
+
+                        <View style={styles.cardDivider} />
+
+                        {/* Türkçe Meal */}
+                        <Text style={[styles.turkishText, { fontSize: fonts.turkish, lineHeight: fonts.turkishLineHeight }]}>
+                            {turkishAyah.text}
+                        </Text>
                     </View>
                 );
             })}
 
-            {/* Sure Sonu Boşluğu */}
             <View style={styles.surahEnd} />
         </ScrollView>
     );
@@ -161,99 +153,137 @@ export function QuranReader({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: KURAN_RENKLER.background,
+        backgroundColor: '#F7F9F7', // Çok açık yeşilimsi gri
     },
-    surahHeader: {
+    scrollContent: {
+        paddingBottom: 40,
+    },
+    surahHeaderGradient: {
+        margin: 16,
+        borderRadius: 20,
+        height: 120,
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: ISLAMI_RENKLER.yesilKoyu,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+    },
+    surahHeaderOverlay: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 24,
-        paddingHorizontal: 20,
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        borderBottomWidth: 2,
-        borderBottomColor: KURAN_RENKLER.sureBaslik,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        padding: 20,
     },
-    surahNumber: {
-        fontSize: 14,
-        color: KURAN_RENKLER.ayetNumarasi,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    surahName: {
-        fontSize: 24,
-        color: KURAN_RENKLER.sureBaslik,
+    surahNumberText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 12,
         fontWeight: 'bold',
-        fontFamily: TYPOGRAPHY.body,
+        letterSpacing: 2,
     },
-    divider: {
-        width: 60,
+    surahNameLarge: {
+        fontSize: 28,
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
+    headerDivider: {
+        width: 40,
         height: 3,
-        backgroundColor: KURAN_RENKLER.ayetNumarasi,
-        marginTop: 12,
+        backgroundColor: ISLAMI_RENKLER.altinAcik,
+        marginTop: 10,
         borderRadius: 2,
     },
-    besmeleContainer: {
+    card: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: 16,
+        marginVertical: 8,
+        borderRadius: 16,
+        padding: 20,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    besmeleCard: {
         alignItems: 'center',
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        marginBottom: 8,
+        paddingVertical: 15,
+        borderWidth: 1,
+        borderColor: 'rgba(27, 94, 32, 0.1)',
     },
-    ayahContainer: {
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        backgroundColor: KURAN_RENKLER.cardBackground,
-        marginBottom: 8,
+    besmeleText: {
+        color: ISLAMI_RENKLER.yesilKoyu,
+        textAlign: 'center',
     },
-    arabicText: {
-        color: KURAN_RENKLER.arapcaMetin,
-        textAlign: 'right',
-        lineHeight: 42,
-        fontWeight: '600',
-        marginBottom: 12,
+    ayahCard: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: 16,
+        marginVertical: 8,
+        borderRadius: 16,
+        padding: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+        borderLeftWidth: 4,
+        borderLeftColor: ISLAMI_RENKLER.yesilOrta,
     },
-    turkishText: {
-        color: KURAN_RENKLER.turkceMeal,
-        textAlign: 'left',
-        lineHeight: 24,
-        fontFamily: TYPOGRAPHY.body,
-        marginBottom: 12,
-    },
-    ayahFooter: {
+    cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 8,
+        marginBottom: 16,
     },
-    ayahNumberContainer: {
-        backgroundColor: KURAN_RENKLER.ayetNumarasi,
+    ayahBadge: {
+        width: 32,
+        height: 32,
         borderRadius: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        backgroundColor: 'rgba(27, 94, 32, 0.08)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(27, 94, 32, 0.2)',
     },
-    ayahNumber: {
-        color: '#FFFFFF',
+    ayahBadgeText: {
+        fontSize: 14,
         fontWeight: 'bold',
+        color: ISLAMI_RENKLER.yesilKoyu,
     },
     actionButtons: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 8,
     },
     actionButton: {
-        padding: 4,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#F8F9F8',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    actionIcon: {
-        fontSize: 20,
-        opacity: 0.6,
+    arabicText: {
+        color: '#2D2D2D',
+        textAlign: 'right',
+        fontSize: 26,
+        writingDirection: 'rtl',
+        marginBottom: 16,
     },
-    actionIconActive: {
-        opacity: 1,
-    },
-    ayahDivider: {
+    cardDivider: {
         height: 1,
-        backgroundColor: KURAN_RENKLER.border,
-        marginTop: 12,
-        opacity: 0.3,
+        backgroundColor: '#EEEEEE',
+        width: '100%',
+        marginBottom: 16,
+    },
+    turkishText: {
+        color: '#444444',
+        textAlign: 'left',
+        lineHeight: 24,
+        fontFamily: TYPOGRAPHY.body,
     },
     surahEnd: {
-        height: 40,
+        height: 60,
     },
 });

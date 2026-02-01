@@ -5,13 +5,15 @@ import { ekstraStiller } from './ekstraStyles';
 import { ISLAMI_RENKLER } from '../../constants/renkler';
 import { yukleBildirimAyarlari, kaydetBildirimAyarlari } from '../../utils/storage';
 import { useBildirimler } from '../../hooks/useBildirimler';
+import { useTheme } from '../../hooks/useTheme';
 
-interface SuHatirlaticiScreenProps {}
+interface SuHatirlaticiScreenProps { }
 
 export default function SuHatirlaticiScreen(_props: SuHatirlaticiScreenProps) {
   const { bildirimleriAyarla } = useBildirimler();
   const [suHatirlatici, setSuHatirlatici] = useState(false);
   const [suIcmeAraligi, setSuIcmeAraligi] = useState('30');
+  const tema = useTheme();
 
   useEffect(() => {
     bildirimAyarlariniYukle();
@@ -71,37 +73,37 @@ export default function SuHatirlaticiScreen(_props: SuHatirlaticiScreenProps) {
   };
 
   return (
-    <EkstraScreenLayout baslik="💧 Su Hatırlatıcı">
-      <View style={ekstraStiller.bolum}>
-        <Text style={ekstraStiller.bolumBaslik}>Sahur Su İçme Hatırlatıcısı</Text>
-        <Text style={ekstraStiller.bilgiText}>
+    <EkstraScreenLayout baslik="💧 Su Hatırlatıcı" geriDonHedef="AraclarMain">
+      <View style={[ekstraStiller.bolum, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : ISLAMI_RENKLER.arkaPlanYesilOrta, borderColor: `${tema.vurgu}20`, borderWidth: 1 }]}>
+        <Text style={[ekstraStiller.bolumBaslik, { color: tema.yaziRenk }]}>Sahur Su İçme Hatırlatıcısı</Text>
+        <Text style={[ekstraStiller.bilgiText, { color: tema.yaziRenkSoluk }]}>
           2026 Ramazan ayı için sahur saatlerinden önce su içme hatırlatıcıları. Sahur saatinden sonra hatırlatma yapılmaz.
         </Text>
         <View style={ekstraStiller.switchContainer}>
-          <Text style={ekstraStiller.switchLabel}>Hatırlatıcıyı Aktif Et</Text>
+          <Text style={[ekstraStiller.switchLabel, { color: tema.yaziRenk }]}>Hatırlatıcıyı Aktif Et</Text>
           <Switch
             value={suHatirlatici}
             onValueChange={suHatirlaticiDegistir}
             trackColor={{
               false: 'rgba(255, 255, 255, 0.3)',
-              true: ISLAMI_RENKLER.altinOrta,
+              true: tema.vurgu,
             }}
-            thumbColor={ISLAMI_RENKLER.yaziBeyaz}
+            thumbColor={tema.isik}
           />
         </View>
         {suHatirlatici && (
           <View style={ekstraStiller.aralikContainer}>
-            <Text style={ekstraStiller.switchLabel}>Hatırlatma Aralığı (dakika)</Text>
+            <Text style={[ekstraStiller.switchLabel, { color: tema.yaziRenk }]}>Hatırlatma Aralığı (dakika)</Text>
             <TextInput
-              style={ekstraStiller.input}
+              style={[ekstraStiller.input, { backgroundColor: tema.arkaPlan === '#05111A' ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.15)', borderColor: `${tema.vurgu}20`, color: tema.yaziRenk }]}
               placeholder="30"
-              placeholderTextColor={ISLAMI_RENKLER.yaziBeyazYumusak}
+              placeholderTextColor={tema.yaziRenkSoluk}
               value={suIcmeAraligi}
               onChangeText={setSuIcmeAraligi}
               onBlur={() => suIcmeAraligiDegistir(suIcmeAraligi)}
               keyboardType="number-pad"
             />
-            <Text style={ekstraStiller.bilgiText}>
+            <Text style={[ekstraStiller.bilgiText, { color: tema.yaziRenkSoluk }]}>
               Her {suIcmeAraligi} dakikada bir sahur saatinden önce hatırlatılacak (15-120 dakika arası).
             </Text>
           </View>

@@ -57,12 +57,14 @@ export interface BildirimAyarlari {
   suIcmeHatirlaticiAktif: boolean;
   suIcmeAraligi: number; // Dakika cinsinden (örn: 30 = her 30 dakikada bir)
   ezanSesiAktif: boolean; // Ezan sesi çalınsın mı
+  abdestHatirlaticiAktif: boolean; // Namazdan 10 dk önce abdest hatırlatıcısı
 }
 
 // Uygulama Ayarları
 export interface UygulamaAyarlari {
   // Görünüm
   yaziBoyutu: 'kucuk' | 'normal' | 'buyuk' | 'cokbuyuk' | 'dev' | 'yasli';
+  temaTercih: 'otomatik' | 'gunduz' | 'gece';
   arapcaYaziGoster: boolean;
   animasyonlarAktif: boolean;
 
@@ -119,6 +121,7 @@ export interface Not {
   baslik?: string;
   icerik: string;
   olusturmaTarihi: number; // timestamp
+  hatirlatici?: number; // Hatırlatıcı timestamp (opsiyonel)
 }
 
 // Sadaka
