@@ -19,6 +19,17 @@ interface RamazanTakvimiProps {
  */
 export const RamazanTakvimi: React.FC<RamazanTakvimiProps> = ({ onGunSec }) => {
     const { zincirHalkalari, toplamIsaretli } = useOrucZinciri();
+    const [viewDate, setViewDate] = useState(new Date());
+
+    const handlePreviousMonth = () => {
+        const prev = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
+        setViewDate(prev);
+    };
+
+    const handleNextMonth = () => {
+        const next = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
+        setViewDate(next);
+    };
 
     // Mevcut ay bilgilerini hesapla
     const ayBilgileri = useMemo(() => {
