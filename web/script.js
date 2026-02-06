@@ -2,6 +2,15 @@
  * Şükür365 – Tek sayfalık site: mobil menü ve erişilebilirlik
  */
 
+// Font/styles gibi kaynaklardan gelen "Uncaught (in promise) Object" hatalarını
+// konsola düşürmemek için yakala (sayfa işlevi etkilenmez)
+window.addEventListener('unhandledrejection', function (event) {
+  var r = event.reason;
+  if (r && typeof r === 'object' && typeof r.message === 'undefined' && !(r instanceof Error)) {
+    event.preventDefault();
+  }
+});
+
 (function () {
   const menuToggle = document.querySelector('.menu-toggle');
   const navMobile = document.getElementById('nav-mobile');
