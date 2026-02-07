@@ -1,4 +1,4 @@
-const OPENAI_API_KEY = 'GÜVENLİK_NEDENİYLE_TEMİZLENDİ_LÜTFEN_ENV_KULLANIN';
+import { supabase } from '../utils/supabaseClient';
 
 export interface GeneratedDua {
     arabic?: string;
@@ -6,44 +6,32 @@ export interface GeneratedDua {
 }
 
 /**
- * OpenAI kullanarak dua üretir
+ * Supabase PostgreSQL fonksiyonu üzerinden AI dua üretir.
+ * OpenAI API key Supabase Vault'ta güvenli şekilde saklanır.
  */
 export async function generateAIDua(prompt: string): Promise<GeneratedDua> {
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o-mini',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Sen samimi ve bilgili bir İslami asistansın. Kullanıcının verdiği bir konu üzerine (dert, şükür, istek vb.) ona özel, içten ve dille kolayca söylenebilecek bir dua hazırla. 
-            Çıktıyı JSON formatında ver: { "arabic": "Arapça metin (varsa)", "turkish": "Türkçe dua metni" }. 
-            Arapça metin mutlaka hareke içermeli ve Kur'an/Hadis kaynaklı dualara uygun olmalı. 
-            Türkçe metin ise kullanıcının girdiği konuya hitap etmeli, samimi ve edebi bir dille yazılmalı.`
-                    },
-                    {
-                        role: 'user',
-                        content: `Konu: ${prompt}`
-                    }
-                ],
-                response_format: { type: "json_object" }
-            }),
+        const { data, error } = await supabase.rpc('generate_ai_dua', {
+            user_prompt: prompt,
         });
 
-        const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content);
+        if (error) {
+            console.error('Supabase RPC hatası:', error);
+            throw new Error('Dua üretilirken bir sorun oluştu. Lütfen tekrar deneyin.');
+        }
+
+        if (data?.error) {
+            throw new Error(data.error);
+        }
 
         return {
-            arabic: result.arabic || undefined,
-            turkish: result.turkish
+            arabic: data.arabic || undefined,
+            turkish: data.turkish,
         };
-    } catch (error) {
-        console.error('OpenAI Hatası:', error);
-        throw new Error('Dua üretilirken bir sorun oluştu. Lütfen tekrar deneyin.');
+    } catch (error: any) {
+        console.error('AI Dua Hatası:', error);
+        throw new Error(
+            error.message || 'Dua üretilirken bir sorun oluştu. Lütfen tekrar deneyin.'
+        );
     }
 }

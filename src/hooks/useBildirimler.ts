@@ -112,17 +112,16 @@ async function requestNotificationPermission(): Promise<boolean> {
 
 /**
  * Bildirim sesi belirle (ezanSesiAktif ayarına göre + platform)
- * iOS: content.sound kullanır (.caf formatı en güvenilir, max 30sn)
+ * iOS: content.sound kullanır (max 30sn)
  * Android: channel sound kullanır (content.sound da set edilir ama channel önceliklidir)
  *
- * ÖNEMLİ: ezan.mp3 213 saniye (3.5dk) olduğu için iOS'ta ÇALMAZ (30sn limiti).
- * Bu yüzden yunus_emre (20sn) kullanılıyor.
+ * ezan_kisa.mp3: ezan.mp3'ün ilk 29 saniyesi (iOS 30sn limitine uygun)
+ * yunus_emre.mp3: hatırlatıcılar ve güneş vakti için (20sn)
  */
 function getEzanBildirimSesi(ezanSesiAktif: boolean): string {
   if (!ezanSesiAktif) return 'default';
 
-  // Her iki platformda .mp3 (Android'de .caf aynı raw adı verdiği için duplicate resource hatası oluyor)
-  return 'yunus_emre.mp3';
+  return 'ezan_kisa.mp3';
 }
 
 /**

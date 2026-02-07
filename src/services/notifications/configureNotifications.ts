@@ -7,14 +7,14 @@ import { logger } from '../../utils/logger';
  * NOT: Android'de kanal bir kez oluşturulduğunda sesi değiştirilemez.
  * Ses değişikliği gerektiğinde kanal ID'sini versiyonlayın (örn: ezan-v3).
  */
-export const CHANNEL_EZAN = 'ezan-v2'; // v2: yunus_emre sesi ile yeniden oluşturuldu
-export const CHANNEL_NAMAZ = 'namaz-vakitleri-v2';
-export const CHANNEL_HATIRLATICI = 'hatirlaticilar-v2';
+export const CHANNEL_EZAN = 'ezan-v3'; // v3: ezan_kisa sesi ile yeniden oluşturuldu
+export const CHANNEL_NAMAZ = 'namaz-vakitleri-v3';
+export const CHANNEL_HATIRLATICI = 'hatirlaticilar-v3';
 
 /**
  * Eski kanalları temizle (artık kullanılmayan kanal ID'leri)
  */
-const ESKI_KANALLAR = ['ezan']; // eski ezan kanalı
+const ESKI_KANALLAR = ['ezan', 'ezan-v2', 'namaz-vakitleri-v2', 'hatirlaticilar-v2']; // eski kanallar
 
 /**
  * Bildirim handler ayarla
@@ -53,7 +53,7 @@ export async function configureNotifications(): Promise<void> {
       }
     }
 
-    // Ezan kanalı (yunus_emre sesi - OS notification sound)
+    // Ezan kanalı (ezan_kisa sesi - 29sn kırpılmış ezan)
     // Android'de bildirim sesi kanal bazında belirlenir
     await Notifications.setNotificationChannelAsync(CHANNEL_EZAN, {
       name: 'Ezan Sesi',
@@ -61,21 +61,21 @@ export async function configureNotifications(): Promise<void> {
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 500, 250, 500],
       lightColor: '#1a5f3f',
-      sound: 'yunus_emre', // Android raw resource - uzantı olmadan
+      sound: 'ezan_kisa', // Android raw resource - uzantı olmadan (29sn ezan)
       enableVibrate: true,
       showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: true,
     });
 
-    // Namaz vakitleri kanalı (geriye dönük uyumluluk)
+    // Namaz vakitleri kanalı
     await Notifications.setNotificationChannelAsync(CHANNEL_NAMAZ, {
       name: 'Namaz Vakitleri',
       description: 'Günlük namaz vakti bildirimleri',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 1000, 500, 1000],
       lightColor: '#1a5f3f',
-      sound: 'yunus_emre', // Android raw resource - uzantı olmadan
+      sound: 'ezan_kisa', // Android raw resource - uzantı olmadan (29sn ezan)
       enableVibrate: true,
       showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
@@ -89,14 +89,14 @@ export async function configureNotifications(): Promise<void> {
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 500, 250, 500],
       lightColor: '#1a5f3f',
-      sound: 'yunus_emre', // Hatırlatıcılar için de Yunus Emre sesi
+      sound: 'yunus_emre', // Hatırlatıcılar için yunus_emre sesi
       enableVibrate: true,
       showBadge: true,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      bypassDnd: false, // Hatırlatıcılar DnD'yi geçmesin
+      bypassDnd: false,
     });
 
-    logger.info('Bildirim kanalları yapılandırıldı (ezan-v2, namaz-v2, hatirlatici-v2)', undefined, 'configureNotifications');
+    logger.info('Bildirim kanalları yapılandırıldı (ezan-v3, namaz-v3, hatirlatici-v3)', undefined, 'configureNotifications');
   } catch (error) {
     logger.error('Bildirim kanalları yapılandırılırken hata', { error }, 'configureNotifications');
   }
