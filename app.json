@@ -21,7 +21,7 @@
       "supportsTablet": true,
       "icon": "./assets/android-chrome-512x512.png",
       "bundleIdentifier": "com.nezihdertsiz.sukur360",
-      "buildNumber": "9",
+      "buildNumber": "15",
       "googleServicesFile": "./GoogleService-Info.plist",
       "splash": {
         "image": "./assets/android-chrome-512x512.png",
@@ -50,7 +50,7 @@
         "backgroundColor": "#1a5f3f"
       },
       "package": "com.nezihdertsiz.sukur360",
-      "versionCode": 9,
+      "versionCode": 15,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
