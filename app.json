@@ -50,7 +50,7 @@
         "backgroundColor": "#1a5f3f"
       },
       "package": "com.nezihdertsiz.sukur360",
-      "versionCode": 16,
+      "versionCode": 17,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -59,10 +59,7 @@
         "VIBRATE",
         "POST_NOTIFICATIONS",
         "SCHEDULE_EXACT_ALARM",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -97,6 +94,8 @@
           "android": {
             "targetSdkVersion": 35,
             "compileSdkVersion": 35,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
             "extraGradleArguments": [
               "-Pandroid.jvmargs=-Xmx4096m"
             ]
