@@ -77,7 +77,6 @@
         {
           "color": "#1a5f3f",
           "sounds": [
-            "./assets/ney.mp3",
             "./assets/ezan.mp3",
             "./assets/ezan_kisa.mp3",
             "./assets/yunus_emre.mp3"
