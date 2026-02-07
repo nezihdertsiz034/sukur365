@@ -121,8 +121,8 @@ async function requestNotificationPermission(): Promise<boolean> {
 function getEzanBildirimSesi(ezanSesiAktif: boolean): string {
   if (!ezanSesiAktif) return 'default';
 
-  // iOS için .caf formatı en güvenilir, Android için .mp3
-  return Platform.OS === 'ios' ? 'yunus_emre.caf' : 'yunus_emre.mp3';
+  // Her iki platformda .mp3 (Android'de .caf aynı raw adı verdiği için duplicate resource hatası oluyor)
+  return 'yunus_emre.mp3';
 }
 
 /**
@@ -138,8 +138,7 @@ async function planlaYerelBildirimler() {
     await Notifications.cancelAllScheduledNotificationsAsync();
     logger.info('Eski yerel bildirimler temizlendi', undefined, 'useBildirimler');
 
-    // Platforma uygun hatırlatıcı sesi
-    const hatirlaticiSes = Platform.OS === 'ios' ? 'yunus_emre.caf' : 'yunus_emre.mp3';
+    const hatirlaticiSes = 'yunus_emre.mp3';
 
     // 2. Günlük Hatırlatıcı (Sabit Saat)
     if (ayarlar.gunlukHatirlaticiAktif) {
@@ -315,7 +314,7 @@ async function planlaYerelBildirimler() {
  */
 export async function sendTestNotification() {
   try {
-    const testSes = Platform.OS === 'ios' ? 'yunus_emre.caf' : 'yunus_emre.mp3';
+    const testSes = 'yunus_emre.mp3';
     // Hemen bildirim gönder
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -360,7 +359,7 @@ export async function getScheduledNotifications() {
  */
 export async function scheduleCustomNotification(saat: number, dakika: number, baslik: string = '⏰ Hatırlatıcı') {
   try {
-    const bildirimSes = Platform.OS === 'ios' ? 'yunus_emre.caf' : 'yunus_emre.mp3';
+    const bildirimSes = 'yunus_emre.mp3';
     await Notifications.scheduleNotificationAsync({
       content: {
         title: baslik,
@@ -400,7 +399,7 @@ export async function scheduleNotBildirimi(not: any) {
       return null;
     }
 
-    const notSes = Platform.OS === 'ios' ? 'yunus_emre.caf' : 'yunus_emre.mp3';
+    const notSes = 'yunus_emre.mp3';
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: '📝 Not Hatırlatıcısı',

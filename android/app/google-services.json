@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "92284955922",
-    "project_id": "adminpanel-1cc1a",
-    "storage_bucket": "adminpanel-1cc1a.firebasestorage.app"
+    "project_number": "920216941355",
+    "project_id": "sukur360-6026e",
+    "storage_bucket": "sukur360-6026e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:92284955922:android:65caa5e9668e47250857cb",
+        "mobilesdk_app_id": "1:920216941355:android:c2fa29720a9c5e16f9cb6e",
         "android_client_info": {
-          "package_name": "com.nezihdertsiz.adminpanel"
+          "package_name": "com.nezihdertsiz.sukur360"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDaDf8ONC9CEPMdY3nDEuf6JNofRxccFn4"
+          "current_key": "AIzaSyAr1MPvpwSp_R4PWw3TseDBvc7zZ0Qff94"
         }
       ],
       "services": {
