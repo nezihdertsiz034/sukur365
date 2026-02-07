@@ -121,7 +121,14 @@ async function requestNotificationPermission(): Promise<boolean> {
 function getEzanBildirimSesi(ezanSesiAktif: boolean): string {
   if (!ezanSesiAktif) return 'default';
 
-  return 'ezan_kisa.mp3';
+  // iOS: .mp3 uzantılı dosya adı gerekir
+  // Android: raw resource adı (uzantısız) gerekir, ama channel ses belirler
+  return Platform.OS === 'android' ? 'ezan_kisa' : 'ezan_kisa.mp3';
+}
+
+/** Platform'a uygun hatırlatıcı ses adı */
+function getHatirlaticiSes(): string {
+  return Platform.OS === 'android' ? 'yunus_emre' : 'yunus_emre.mp3';
 }
 
 /**
@@ -137,7 +144,7 @@ async function planlaYerelBildirimler() {
     await Notifications.cancelAllScheduledNotificationsAsync();
     logger.info('Eski yerel bildirimler temizlendi', undefined, 'useBildirimler');
 
-    const hatirlaticiSes = 'yunus_emre.mp3';
+    const hatirlaticiSes = getHatirlaticiSes();
 
     // 2. Günlük Hatırlatıcı (Sabit Saat)
     if (ayarlar.gunlukHatirlaticiAktif) {
@@ -236,7 +243,7 @@ async function planlaYerelBildirimler() {
               : `${sehir.isim} için ${vakitIsimleri[key as keyof typeof vakitIsimleri]} vakti geldi.`;
 
             // Ezan sesi: güneş vakti için varsayılan ses, diğerleri için ezan sesi
-            const bildirimSesi = isGunes ? 'yunus_emre.mp3' : ezanSesi;
+            const bildirimSesi = isGunes ? getHatirlaticiSes() : ezanSesi;
 
             await Notifications.scheduleNotificationAsync({
               content: {
@@ -313,7 +320,7 @@ async function planlaYerelBildirimler() {
  */
 export async function sendTestNotification() {
   try {
-    const testSes = 'yunus_emre.mp3';
+    const testSes = getHatirlaticiSes();
     // Hemen bildirim gönder
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -358,7 +365,7 @@ export async function getScheduledNotifications() {
  */
 export async function scheduleCustomNotification(saat: number, dakika: number, baslik: string = '⏰ Hatırlatıcı') {
   try {
-    const bildirimSes = 'yunus_emre.mp3';
+    const bildirimSes = getHatirlaticiSes();
     await Notifications.scheduleNotificationAsync({
       content: {
         title: baslik,
@@ -398,7 +405,7 @@ export async function scheduleNotBildirimi(not: any) {
       return null;
     }
 
-    const notSes = 'yunus_emre.mp3';
+    const notSes = getHatirlaticiSes();
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: '📝 Not Hatırlatıcısı',

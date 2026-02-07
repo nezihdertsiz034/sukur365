@@ -44,6 +44,14 @@ export default function AyarlarScreen() {
   const playSound = async (type: 'ney' | 'ezan') => {
     try {
       setPlayingSound(type);
+
+      // Android'de ses çalmak için Audio modunu ayarla
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
       const soundFile = type === 'ney'
         ? require('../../assets/yunus_emre.mp3')
         : require('../../assets/ezan.mp3');

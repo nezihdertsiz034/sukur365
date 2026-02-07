@@ -144,6 +144,13 @@ export default function TesbihScreen() {
 
   const sesiYukle = async () => {
     try {
+      // Android'de ses çalmak için Audio modunu ayarla
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
       const { sound } = await Audio.Sound.createAsync(
         require('../../assets/yunus_emre.mp3'),
         { volume: 0.3 }
