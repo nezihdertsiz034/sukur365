@@ -50,7 +50,7 @@
         "backgroundColor": "#1a5f3f"
       },
       "package": "com.nezihdertsiz.sukur360",
-      "versionCode": 17,
+      "versionCode": 20,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -60,6 +60,9 @@
         "POST_NOTIFICATIONS",
         "SCHEDULE_EXACT_ALARM",
         "MODIFY_AUDIO_SETTINGS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {

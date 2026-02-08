@@ -91,7 +91,7 @@ android {
         applicationId 'com.nezihdertsiz.sukur360'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 15
+        versionCode 20
         versionName "1.0.6"
     }
     signingConfigs {
